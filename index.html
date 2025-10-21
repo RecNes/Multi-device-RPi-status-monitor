@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Raspberry Pi Sistem Durumu</title>
+    <meta http-equiv="refresh" content="5"> <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h3 { margin-top: 20px; color: #555; border-bottom: 1px dashed #ddd; padding-bottom: 5px;}
+        p { margin: 10px 0; font-size: 1.1em; }
+        span { font-weight: bold; color: #007bff; }
+        .alert { 
+            color: #d9534f; /* Kırmızı renk */
+            font-weight: bold; 
+            padding: 5px;
+            border: 1px solid #d9534f;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .ok { 
+            color: #5cb85c; /* Yeşil renk */
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Raspberry Pi Sistem Durumu</h1>
+        
+        <h2>Sistem Kısıtlama (Throttling) Durumu</h2>
+        <p>Hex Kodu: <span>{{ data.throttled_code }}</span></p>
+        
+        {% if data.throttled_status and data.throttled_code != '0x0' and data.throttled_code != '0x00000' %}
+            <div class="alert">
+                {% for status in data.throttled_status %}
+                    <p>{{ status }}</p>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="ok">Sistemde herhangi bir kısıtlama, düşük voltaj veya aşırı ısınma yok. (✅)</p>
+        {% endif %}
+
+        <p>Çalışma Süresi: <span>{{ data.uptime }}</span></p>
+        <p>Başlangıç Zamanı: <span>{{ data.boot_time }}</span></p>
+        
+        ---
+
+        <h2>Temel Performans Metrikleri</h2>
+        <p>CPU Kullanımı: <span>{{ data.cpu_usage }}</span></p>
+        <p>RAM Kullanımı: <span>{{ data.ram_usage }}</span></p>
+        <p>Disk Kullanımı: <span>{{ data.disk_usage }}</span></p>
+        <p>İşlemci Hızı (ARM): <span>{{ data.cpu_frequency }}</span></p>
+        <p>CPU Sıcaklığı: <span>{{ data.cpu_temp }}</span></p>
+
+        ---
+
+        <h3>Sistem Voltajları</h3>
+        <p>Çekirdek (Core) Voltajı: <span>{{ data.cpu_voltage }}</span></p>
+        <p>SDRAM Kontrol (C) Voltajı: <span>{{ data.sdram_c_voltage }}</span></p>
+        <p>SDRAM Çekirdek (I) Voltajı: <span>{{ data.sdram_i_voltage }}</span></p>
+        <p>SDRAM PHY (P) Voltajı: <span>{{ data.sdram_p_voltage }}</span></p>
+        
+        <hr>
+        <small>Sayfa son 5 saniyelik verilerle yenilendi.</small>
+    </div>
+</body>
+</html>

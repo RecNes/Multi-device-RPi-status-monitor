@@ -1,0 +1,18 @@
+# Pi'nizin IP adresi veya alan adı (gerekirse)
+server_name _; 
+
+location / {
+    proxy_pass http://unix:/tmp/rpi_monitor.sock;
+    
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# location /static {
+#     alias /home/pi/rpi_monitor_app/static;
+# }
+
+error_log /var/log/nginx/rpi_monitor_error.log;
+access_log /var/log/nginx/rpi_monitor_access.log;
