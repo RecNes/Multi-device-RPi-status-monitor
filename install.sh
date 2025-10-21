@@ -105,7 +105,7 @@ User=$CURRENT_USER
 Group=www-data
 
 WorkingDirectory=$PROJECT_PATH
-ExecStart=$GUNICORN_EXEC --workers 4 --bind unix:/tmp/rpi_monitor.sock app:app
+ExecStart=$GUNICORN_EXEC --workers 3 --bind unix:/tmp/rpi_monitor.sock
 Nice=10
 Restart=always
 RestartSec=5
