@@ -1,4 +1,4 @@
-# 🍓 Raspberry Pi Durum İzleme Sayfası (Stand-Alone RPi Status Monitoring Page)
+# 🍓 Raspberry Pi Durum İzleme Sayfası
 
 Bu proje, Raspberry Pi cihazınızın temel sistem metriklerini (CPU kullanımı, RAM, disk, sıcaklık, voltaj ve kısıtlama durumu) gerçek zamanlı olarak gösteren hafif bir Flask tabanlı web uygulamasıdır. Uygulama, Nginx ve Gunicorn arkasında, sistem servisi olarak çalışacak şekilde tasarlanmıştır.
 
@@ -24,14 +24,12 @@ Projenizi Git ile indirdikten sonra, kurulumu tek bir komutla tamamlayabilirsini
 
 ### 1. Projeyi İndirme
 
-```
 
 # Proje dizininizi oluşturun ve içine girin
 
-git clone \<Projenizin Git URL'si\>
+git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
 cd stand-alone-RPi-status-monitoring-page/
 
-```
 
 ### 2. Kurulum Betiğini Çalıştırma
 
@@ -39,12 +37,10 @@ cd stand-alone-RPi-status-monitoring-page/
 
 **Not:** Betik çalışırken root yetkisi gerektiren komutlar (`sudo`) kullanacaktır.
 
-```
 
-chmod +x setup.sh  \# Betiği çalıştırılabilir yap
+chmod +x setup.sh
 ./setup.sh
 
-```
 
 ### Betik Ne Yapar?
 
