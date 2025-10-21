@@ -4,7 +4,7 @@ Bu proje, Raspberry Pi cihazınızın temel sistem metriklerini (CPU kullanımı
 
 # Ekran görüntüsü
 
-<img src="screen_shot.jpg" alt="Project Logo" width="100"/>
+<img src="screen_shot.jpg" alt="Project Logo" />
 
 ## Özellikler
 
