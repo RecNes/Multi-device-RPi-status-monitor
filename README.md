@@ -2,6 +2,10 @@
 
 Bu proje, Raspberry Pi cihazınızın temel sistem metriklerini (CPU kullanımı, RAM, disk, sıcaklık, voltaj ve kısıtlama durumu) gerçek zamanlı olarak gösteren hafif bir Flask tabanlı web uygulamasıdır. Uygulama, Nginx ve Gunicorn arkasında, sistem servisi olarak çalışacak şekilde tasarlanmıştır.
 
+# Ekran görüntüsü
+
+<img src="screen_shot.jpg" alt="Project Logo" width="100"/>
+
 ## Özellikler
 
 * **Gerçek Zamanlı Veriler:** CPU, RAM ve Disk kullanım yüzdeleri.
