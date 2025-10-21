@@ -29,10 +29,10 @@ Projenizi Git ile indirdikten sonra, kurulumu tek bir komutla tamamlayabilirsini
 ### 1. Projeyi İndirme
 
 
-# Proje dizininizi oluşturun ve içine girin
+### Proje dizininizi oluşturun ve içine girin
 
-git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
-cd stand-alone-RPi-status-monitoring-page/
+    git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
+    cd stand-alone-RPi-status-monitoring-page/
 
 
 ### 2. Kurulum Betiğini Çalıştırma
@@ -42,8 +42,8 @@ cd stand-alone-RPi-status-monitoring-page/
 **Not:** Betik çalışırken root yetkisi gerektiren komutlar (`sudo`) kullanacaktır.
 
 
-chmod +x setup.sh
-./setup.sh
+    chmod +x setup.sh
+    ./setup.sh
 
 
 ### Betik Ne Yapar?
@@ -58,11 +58,14 @@ chmod +x setup.sh
 
 5. **Systemd Servisi:** Uygulamayı Gunicorn ile başlatmak için `/etc/systemd/system/rpi_monitor.service` dosyasını oluşturur, servisi etkinleştirir ve hemen başlatır.
 
+
 ## Kullanım
 
 Kurulum tamamlandıktan sonra uygulamaya erişmek için, Raspberry Pi'nizin IP adresini web tarayıcınıza yazmanız yeterlidir.
 
+
 **Örnek:** `http://[Raspberry Pi'nizin IP Adresi]:5000/`
+
 
 ## Bakım ve Yönetim
 
@@ -74,6 +77,7 @@ Uygulamanız bir `systemd` servisi olarak çalıştığı için, yönetim işlem
 | **Yeniden Başlatma** | `sudo systemctl restart rpi_monitor.service` | Kodda bir değişiklik yaptığınızda servisi yeniden başlatır. |
 | **Durdurma** | `sudo systemctl stop rpi_monitor.service` | Servisi durdurur. |
 | **Otomatik Başlatmayı Kaldırma** | `sudo systemctl disable rpi_monitor.service` | Cihaz yeniden başlatıldığında otomatik olarak çalışmasını engeller. |
+
 
 ## Proje Dosyaları
 
