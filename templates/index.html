@@ -1,68 +1,294 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Raspberry Pi Sistem Durumu</title>
-    <meta http-equiv="refresh" content="5"> <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        h3 { margin-top: 20px; color: #555; border-bottom: 1px dashed #ddd; padding-bottom: 5px;}
-        p { margin: 10px 0; font-size: 1.1em; }
-        span { font-weight: bold; color: #007bff; }
-        .alert { 
-            color: #d9534f; /* Kırmızı renk */
-            font-weight: bold; 
-            padding: 5px;
-            border: 1px solid #d9534f;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .ok { 
-            color: #5cb85c; /* Yeşil renk */
-            font-weight: bold; 
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Status Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Raspberry Pi Sistem Durumu</h1>
+        <header>
+            <h1>Raspberry Pi Status Monitor</h1>
+            <p>Real-time system monitoring with historical data</p>
+        </header>
         
-        <h2>Sistem Kısıtlama (Throttling) Durumu</h2>
-        <p>Hex Kodu: <span>{{ data.throttled_code }}</span></p>
-        
-        {% if data.throttled_status and data.throttled_code != '0x0' and data.throttled_code != '0x00000' %}
-            <div class="alert">
-                {% for status in data.throttled_status %}
-                    <p>{{ status }}</p>
-                {% endfor %}
+        <div class="dashboard">
+            <div class="card">
+                <div class="card-header cpu">
+                    <span>🖥️ CPU</span>
+                </div>
+                <div class="stat-value" id="cpu-usage">{{ system_info.cpu.usage }}%</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span id="cpu-percentage">{{ system_info.cpu.usage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill cpu" id="cpu-progress" style="width: {{ system_info.cpu.usage }}%"></div>
+                    </div>
+                </div>
+                <div class="stat-value" id="cpu-frequency">{{ system_info.cpu.frequency }}</div>
             </div>
-        {% else %}
-            <p class="ok">Sistemde herhangi bir kısıtlama, düşük voltaj veya aşırı ısınma yok. (✅)</p>
-        {% endif %}
-
-        <p>Çalışma Süresi: <span>{{ data.uptime }}</span></p>
-        <p>Başlangıç Zamanı: <span>{{ data.boot_time }}</span></p>
+            
+            <div class="card">
+                <div class="card-header memory">
+                    <span>💾 Memory</span>
+                </div>
+                <div class="stat-value" id="memory-usage">{{ system_info.memory.used }} GB / {{ system_info.memory.total }} GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span id="memory-percentage">{{ system_info.memory.percentage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill memory" id="memory-progress" style="width: {{ system_info.memory.percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header disk">
+                    <span>💿 Disk</span>
+                </div>
+                <div class="stat-value" id="disk-usage">{{ system_info.disk.used }} GB / {{ system_info.disk.total }} GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span id="disk-percentage">{{ system_info.disk.percentage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill disk" id="disk-progress" style="width: {{ system_info.disk.percentage }}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header temp">
+                    <span>🌡️ Temperature</span>
+                </div>
+                <div class="stat-value" id="temperature">{{ system_info.temperature }}°C</div>
+                <div class="chart-container">
+                    <canvas id="temp-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header network">
+                    <span>🌐 Network</span>
+                </div>
+                <div class="interface-list" id="interface-list">
+                    <!-- Network interfaces will be populated by JavaScript -->
+                    {% for iface, stats in system_info.network.interfaces.items() %}
+                    <div class="interface-card">
+                        <h3>{{ iface }}</h3>
+                        {% if stats.speed %}
+                        <div class="interface-speed">{{ stats.speed }} Mbps</div>
+                        {% endif %}
+                        <div class="network-stats">
+                            <div class="network-stat">
+                                <div>Sent</div>
+                                <div class="network-stat-value" id="bytes-sent-{{ iface }}">
+                                    {{ "{:,}".format(stats.bytes_sent) }} Bytes
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Received</div>
+                                <div class="network-stat-value" id="bytes-recv-{{ iface }}">
+                                    {{ "{:,}".format(stats.bytes_recv) }} Bytes
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Sent</div>
+                                <div class="network-stat-value" id="packets-sent-{{ iface }}">
+                                    {{ "{:,}".format(stats.packets_sent) }}
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Received</div>
+                                <div class="network-stat-value" id="packets-recv-{{ iface }}">
+                                    {{ "{:,}".format(stats.packets_recv) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header uptime">
+                    <span>⏱️ Uptime</span>
+                </div>
+                <div class="stat-value" id="uptime">{{ system_info.uptime }}</div>
+            </div>
+        </div>
         
-        ---
-
-        <h2>Temel Performans Metrikleri</h2>
-        <p>CPU Kullanımı: <span>{{ data.cpu_usage }}</span></p>
-        <p>RAM Kullanımı: <span>{{ data.ram_usage }}</span></p>
-        <p>Disk Kullanımı: <span>{{ data.disk_usage }}</span></p>
-        <p>İşlemci Hızı (ARM): <span>{{ data.cpu_frequency }}</span></p>
-        <p>CPU Sıcaklığı: <span>{{ data.cpu_temp }}</span></p>
-
-        ---
-
-        <h3>Sistem Voltajları</h3>
-        <p>Çekirdek (Core) Voltajı: <span>{{ data.cpu_voltage }}</span></p>
-        <p>SDRAM Kontrol (C) Voltajı: <span>{{ data.sdram_c_voltage }}</span></p>
-        <p>SDRAM Çekirdek (I) Voltajı: <span>{{ data.sdram_i_voltage }}</span></p>
-        <p>SDRAM PHY (P) Voltajı: <span>{{ data.sdram_p_voltage }}</span></p>
-        
-        <hr>
-        <small>Sayfa son 5 saniyelik verilerle yenilendi.</small>
+        <footer>
+            <p>Real-time monitoring | Historical data stored in database</p>
+        </footer>
     </div>
+
+    <script>
+        const tempCtx = document.getElementById('temp-chart').getContext('2d');
+        const tempChart = new Chart(tempCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: [],
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateProgressBar(element, percentage) {
+            element.classList.remove('low', 'medium', 'high');
+            
+            if (percentage < 50) {
+                element.classList.add('low');
+            } else if (percentage < 80) {
+                element.classList.add('medium');
+            } else {
+                element.classList.add('high');
+            }
+            
+            element.style.width = percentage + '%';
+        }
+
+        function fetchSystemInfo() {
+            fetch('/api/system-info')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-usage').textContent = data.cpu.usage + '%';
+                    document.getElementById('cpu-percentage').textContent = data.cpu.usage + '%';
+                    document.getElementById('cpu-frequency').textContent = data.cpu.frequency;
+                    updateProgressBar(document.getElementById('cpu-progress'), data.cpu.usage);
+
+                    document.getElementById('memory-usage').textContent = 
+                        data.memory.used + ' GB / ' + data.memory.total + ' GB';
+                    document.getElementById('memory-percentage').textContent = data.memory.percentage + '%';
+                    updateProgressBar(document.getElementById('memory-progress'), data.memory.percentage);
+
+                    document.getElementById('disk-usage').textContent = 
+                        data.disk.used + ' GB / ' + data.disk.total + ' GB';
+                    document.getElementById('disk-percentage').textContent = data.disk.percentage + '%';
+                    updateProgressBar(document.getElementById('disk-progress'), data.disk.percentage);
+
+                    document.getElementById('temperature').textContent = data.temperature + '°C';
+
+                    const interfaceList = document.getElementById('interface-list');
+                    interfaceList.innerHTML = '';
+                    
+                    Object.entries(data.network.interfaces).forEach(([iface, stats]) => {
+                        const interfaceCard = document.createElement('div');
+                        interfaceCard.className = 'interface-card';
+                        
+                        const title = document.createElement('h3');
+                        title.textContent = iface;
+                        interfaceCard.appendChild(title);
+                        
+                        if (stats.speed) {
+                            const speed = document.createElement('div');
+                            speed.className = 'interface-speed';
+                            speed.textContent = `${stats.speed} Mbps`;
+                            interfaceCard.appendChild(speed);
+                        }
+                        
+                        const statsDiv = document.createElement('div');
+                        statsDiv.className = 'network-stats';
+                        statsDiv.innerHTML = `
+                            <div class="network-stat">
+                                <div>Sent</div>
+                                <div class="network-stat-value">${formatBytes(stats.bytes_sent)}</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Received</div>
+                                <div class="network-stat-value">${formatBytes(stats.bytes_recv)}</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Sent</div>
+                                <div class="network-stat-value">${stats.packets_sent.toLocaleString()}</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Received</div>
+                                <div class="network-stat-value">${stats.packets_recv.toLocaleString()}</div>
+                            </div>
+                        `;
+                        interfaceCard.appendChild(statsDiv);
+                        interfaceList.appendChild(interfaceCard);
+
+                    document.getElementById('uptime').textContent = data.uptime;
+
+                    updateTempChart(data.temperature);
+                })
+                .catch(error => {
+                    console.error('Error fetching system info:', error);
+                });
+        }
+
+        function updateTempChart(temperature) {
+            const now = new Date();
+            const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+
+            tempChart.data.labels.push(timeString);
+            tempChart.data.datasets[0].data.push(temperature);
+
+            if (tempChart.data.labels.length > 20) {
+                tempChart.data.labels.shift();
+                tempChart.data.datasets[0].data.shift();
+            }
+
+            tempChart.update();
+        }
+
+        function seedHistory() {
+            fetch('/api/history')
+                .then(r => r.json())
+                .then(history => {
+                    history.reverse();
+                    history.forEach(point => {
+                        const t = new Date(point.timestamp);
+                        const label = t.getHours() + ':' + (t.getMinutes() < 10 ? '0' : '') + t.getMinutes();
+                        tempChart.data.labels.push(label);
+                        tempChart.data.datasets[0].data.push(point.temperature);
+                    });
+                    tempChart.update();
+                })
+                .catch(err => console.warn('Could not load history:', err));
+        }
+
+    seedHistory();
+    fetchSystemInfo();
+    setInterval(fetchSystemInfo, 5000);
+    </script>
 </body>
 </html>
