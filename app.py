@@ -192,7 +192,12 @@ def collect_metrics_once() -> dict:
     throttled = None
     voltages = {}
     try:
-        out = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True, check=True)
+        out = subprocess.run(
+            ['vcgencmd', 'get_throttled'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
         throttled = out.stdout.strip().split('=')[-1]
     except Exception:
         throttled = None
