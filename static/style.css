@@ -12,6 +12,16 @@ body {
     padding: 20px;
 }
 
+/* Reduce overall UI size by 25% (scale to 75%).
+   We scale the body and compensate the width so the layout
+   continues to fill the viewport. This reduces all visual
+   elements proportionally. */
+body {
+    transform: scale(0.75);
+    transform-origin: 0 0;
+    width: 133.3333%; /* 100 / 0.75 */
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -30,7 +40,7 @@ header {
 
 header h1 {
     font-size: 2.5rem;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 }
 
 header p {
@@ -252,6 +262,43 @@ footer {
 .progress-fill.medium {
     background: linear-gradient(to right, #f1c40f, #f39c12) !important;
 }
+
 .progress-fill.high {
     background: linear-gradient(to right, #e74c3c, #c0392b) !important;
+}
+
+.toggle-button {
+    display: block;
+    text-align: center;
+    margin: 10px auto 0;
+    font-size: 1.3rem;
+    color: #3498db;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.toggle-button:hover {
+    text-decoration: underline;
+}
+
+.stat-small {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.stat-row .stat-value {
+    font-size: 1.5rem; /* Smaller font for side-by-side display */
+    margin: 0;
 }

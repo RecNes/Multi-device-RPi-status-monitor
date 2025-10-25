@@ -1,4 +1,3 @@
 Flask>=2.0.0
 gunicorn>=20.1.0
-psutil>=5.8.0
-python-ethtool>=0.15.0
+psutil>=5.9.0

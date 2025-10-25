@@ -13,9 +13,11 @@ import threading
 import time
 import sqlite3
 import subprocess
+import json
 
 import psutil
 from flask import Flask, render_template, jsonify
+import os
 
 
 app = Flask(__name__)
@@ -23,6 +25,10 @@ app = Flask(__name__)
 
 DB_PATH = 'system_stats.db'
 COLLECT_INTERVAL = 5
+# Retention in days for historical records. Default 30 (about 1 month).
+# Can be overridden by setting environment variable RETENTION_DAYS.
+RETENTION_DAYS = int(os.environ.get('RETENTION_DAYS', '30'))
+
 
 
 def init_db():
@@ -53,10 +59,35 @@ def init_db():
                  packets_sent INTEGER,
                  packets_recv INTEGER,
                  speed INTEGER,
+                 mtu INTEGER,
+                 is_up BOOLEAN,
+                 addresses TEXT,  -- JSON array of IP addresses
                  FOREIGN KEY(stats_id) REFERENCES stats(id)
                  )''')
     conn.commit()
     conn.close()
+
+    # Ensure new columns exist (safe ALTER TABLE for upgrades)
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("PRAGMA table_info(stats)")
+        cols = {r[1] for r in c.fetchall()}  # names
+        # Add columns if missing
+        if 'throttled' not in cols:
+            c.execute("ALTER TABLE stats ADD COLUMN throttled TEXT")
+        if 'voltages' not in cols:
+            c.execute("ALTER TABLE stats ADD COLUMN voltages TEXT")
+        conn.commit()
+    except Exception:
+        # If migration fails, continue; collector will still run but
+        # saving new fields may fail until fixed.
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def save_stats_to_db(stats):
@@ -64,12 +95,11 @@ def save_stats_to_db(stats):
     conn = sqlite3.connect(DB_PATH)
     try:
         c = conn.cursor()
-
         c.execute('''INSERT INTO stats (
                     cpu_usage, cpu_frequency, memory_used, memory_total,
                     memory_percentage, disk_used, disk_total, disk_percentage,
-                    temperature
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    temperature, throttled, voltages
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             stats['cpu']['usage'],
             stats['cpu']['frequency'],
             stats['memory']['used'],
@@ -78,7 +108,9 @@ def save_stats_to_db(stats):
             stats['disk']['used'],
             stats['disk']['total'],
             stats['disk']['percentage'],
-            stats['temperature']
+            stats['temperature'],
+            stats.get('throttled'),
+            json.dumps(stats.get('voltages', {})),
         ))
 
         stats_id = c.lastrowid
@@ -86,15 +118,19 @@ def save_stats_to_db(stats):
         for iface, iface_stats in stats['network']['interfaces'].items():
             c.execute('''INSERT INTO network_stats (
                         stats_id, interface_name, bytes_sent, bytes_recv,
-                        packets_sent, packets_recv, speed
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)''', (
+                        packets_sent, packets_recv, speed, mtu, is_up,
+                        addresses
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
                 stats_id,
                 iface,
                 iface_stats['bytes_sent'],
                 iface_stats['bytes_recv'],
                 iface_stats['packets_sent'],
                 iface_stats['packets_recv'],
-                iface_stats['speed']
+                iface_stats['speed'],
+                iface_stats['mtu'],
+                iface_stats['is_up'],
+                json.dumps(iface_stats.get('addresses', []))
             ))
 
         conn.commit()
@@ -116,30 +152,80 @@ def collect_metrics_once() -> dict:
     memory = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
 
+    # Get network stats
     net_io_total = psutil.net_io_counters()
     net_io_ifaces = psutil.net_io_counters(pernic=True)
+    net_if_addrs = psutil.net_if_addrs()
+    net_if_stats = psutil.net_if_stats()
 
     active_ifaces = {}
     for iface, stats in net_io_ifaces.items():
-        if (
-            iface != 'lo' and
-            stats.bytes_sent + stats.bytes_recv > 0 and
-            not iface.startswith('veth')
-        ):
-            active_ifaces[iface] = {
-                'bytes_sent': stats.bytes_sent,
-                'bytes_recv': stats.bytes_recv,
-                'packets_sent': stats.packets_sent,
-                'packets_recv': stats.packets_recv,
-                'speed': None
-            }
-            try:
-                import ethtool
-                active_ifaces[iface]['speed'] = ethtool.get_speed(iface)
-            except (ImportError, IOError):
-                pass
+        # Skip loopback and inactive interfaces
+        if (iface == 'lo' or stats.bytes_sent + stats.bytes_recv == 0 or
+                iface.startswith(('veth', 'docker', 'br-'))):
+            continue
+
+        # Get interface details
+        if_stats = net_if_stats.get(iface, None)
+        is_up = if_stats.isup if if_stats else False
+
+        if not is_up:
+            continue
+
+        # Basic stats
+        iface_info = {
+            'bytes_sent': stats.bytes_sent,
+            'bytes_recv': stats.bytes_recv,
+            'packets_sent': stats.packets_sent,
+            'packets_recv': stats.packets_recv,
+            'speed': if_stats.speed if if_stats else None,
+            'is_up': is_up,
+            'mtu': if_stats.mtu if if_stats else None,
+        }
+
+        # Get IP addresses
+        addresses = net_if_addrs.get(iface, [])
+        # Get IPv4/IPv6 addresses (family 2=IPv4, 10=IPv6)
+        ips = [addr.address for addr in addresses
+               if addr.family in {2, 10}]
+        if ips:
+            iface_info['addresses'] = ips
+
+        active_ifaces[iface] = iface_info
 
     temperature = get_temperature()
+
+    # Collect throttling and voltages via vcgencmd when available (Raspberry Pi)
+    throttled = None
+    voltages = {}
+    try:
+        out = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True, check=True)
+        throttled = out.stdout.strip().split('=')[-1]
+    except Exception:
+        throttled = None
+
+    # Try to collect multiple named voltages (core + sdram variants)
+    try:
+        for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
+            try:
+                out = subprocess.run(
+                    ['vcgencmd', 'measure_volts', name],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                v = out.stdout.strip().split('=')[-1]
+                if v.endswith('V'):
+                    v = v[:-1]
+                try:
+                    voltages[name] = float(v)
+                except Exception:
+                    voltages[name] = None
+            except Exception:
+                # individual voltage may not exist on some boards; mark as None
+                voltages[name] = None
+    except Exception:
+        voltages = {}
 
     metrics = {
         'cpu': {'usage': cpu_usage, 'frequency': cpu_frequency},
@@ -165,6 +251,8 @@ def collect_metrics_once() -> dict:
             'interfaces': active_ifaces
         },
         'temperature': temperature,
+        'throttled': throttled,
+        'voltages': voltages,
         'uptime': get_uptime()
     }
 
@@ -182,6 +270,10 @@ def collector_loop():
 
             try:
                 save_stats_to_db(metrics)
+                try:
+                    prune_old_records()
+                except Exception as e:
+                    app.logger.debug('Prune failed: %s', e)
             except Exception as e:
                 app.logger.warning('Failed to save metrics to DB: %s', e)
         except Exception as e:
@@ -193,6 +285,7 @@ def collector_loop():
 
 def get_temperature():
     """Get CPU temperature (tries vcgencmd then psutil sensors)."""
+    # Try vcgencmd for Raspberry Pi
     try:
         cmd = ['vcgencmd', 'measure_temp']
         result = subprocess.run(
@@ -207,14 +300,20 @@ def get_temperature():
         )
         return temp
     except Exception:
-        try:
+        pass
+
+    # Try psutil sensors for other platforms
+    try:
+        if hasattr(psutil, 'sensors_temperatures'):
             temps = psutil.sensors_temperatures()
-            for key in ('cpu-thermal', 'coretemp', 'cpu_thermal'):
-                if key in temps and temps[key]:
-                    return float(temps[key][0].current)
-        except Exception:
-            pass
-    return 0.0
+            if temps:  # Check if we got any temperature data
+                for key in ('cpu-thermal', 'coretemp', 'cpu_thermal'):
+                    if key in temps and temps[key]:
+                        return float(temps[key][0].current)
+    except Exception:
+        pass
+
+    return 0.0  # Temperature not available
 
 
 def get_uptime() -> str:
@@ -222,6 +321,30 @@ def get_uptime() -> str:
     hours = int(uptime_seconds // 3600)
     minutes = int((uptime_seconds % 3600) // 60)
     return f"{hours} hours, {minutes} minutes"
+
+
+def prune_old_records():
+    """Delete stats and related network_stats older than RETENTION_DAYS."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        offset = f"-{RETENTION_DAYS} days"
+        c.execute(
+            "DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE timestamp <= datetime('now', ?))",
+            (offset,)
+        )
+        c.execute(
+            "DELETE FROM stats WHERE timestamp <= datetime('now', ?)",
+            (offset,)
+        )
+        conn.commit()
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 
 @app.route('/')
@@ -259,7 +382,7 @@ def api_history():
 
         c.execute('''
             SELECT id, timestamp, cpu_usage, memory_percentage,
-                   disk_percentage, temperature
+                   disk_percentage, temperature, throttled, voltages
             FROM stats
             ORDER BY timestamp DESC
             LIMIT 50
@@ -293,6 +416,8 @@ def api_history():
                 'memory_percentage': row[3],
                 'disk_percentage': row[4],
                 'temperature': row[5],
+                'throttled': row[6],
+                'voltages': json.loads(row[7]) if row[7] else {},
                 'network': interfaces
             })
 
@@ -309,6 +434,17 @@ def start_collector_thread():
         name='metrics-collector'
     )
     collector.start()
+
+# Try to initialize DB and start the collector when the module is
+# imported by a WSGI server (e.g. waitress). This ensures tables exist
+# even when the module isn't executed as a script.
+try:
+    init_db()
+    start_collector_thread()
+except Exception:
+    # Swallow errors at import time to avoid breaking WSGI import; the
+    # Flask error handling will report problems if endpoints are used.
+    pass
 
 
 if __name__ == '__main__':
