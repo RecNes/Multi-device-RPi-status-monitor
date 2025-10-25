@@ -1,0 +1,13 @@
+[Unit]
+Description=RPi Monitor Server
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/rpi-monitor/server
+ExecStart=/usr/bin/python3 /home/pi/rpi-monitor/server/server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
