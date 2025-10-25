@@ -30,7 +30,6 @@ COLLECT_INTERVAL = 5
 RETENTION_DAYS = int(os.environ.get('RETENTION_DAYS', '30'))
 
 
-
 def init_db():
     """Initialize the SQLite database and create tables if missing."""
     conn = sqlite3.connect(DB_PATH)
@@ -67,21 +66,18 @@ def init_db():
     conn.commit()
     conn.close()
 
-    # Ensure new columns exist (safe ALTER TABLE for upgrades)
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("PRAGMA table_info(stats)")
         cols = {r[1] for r in c.fetchall()}  # names
-        # Add columns if missing
+
         if 'throttled' not in cols:
             c.execute("ALTER TABLE stats ADD COLUMN throttled TEXT")
         if 'voltages' not in cols:
             c.execute("ALTER TABLE stats ADD COLUMN voltages TEXT")
         conn.commit()
     except Exception:
-        # If migration fails, continue; collector will still run but
-        # saving new fields may fail until fixed.
         pass
     finally:
         try:
@@ -183,9 +179,7 @@ def collect_metrics_once() -> dict:
             'mtu': if_stats.mtu if if_stats else None,
         }
 
-        # Get IP addresses
         addresses = net_if_addrs.get(iface, [])
-        # Get IPv4/IPv6 addresses (family 2=IPv4, 10=IPv6)
         ips = [addr.address for addr in addresses
                if addr.family in {2, 10}]
         if ips:
@@ -195,16 +189,19 @@ def collect_metrics_once() -> dict:
 
     temperature = get_temperature()
 
-    # Collect throttling and voltages via vcgencmd when available (Raspberry Pi)
     throttled = None
     voltages = {}
     try:
-        out = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True, text=True, check=True)
+        out = subprocess.run(
+            ['vcgencmd', 'get_throttled'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
         throttled = out.stdout.strip().split('=')[-1]
     except Exception:
         throttled = None
 
-    # Try to collect multiple named voltages (core + sdram variants)
     try:
         for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
             try:
@@ -222,7 +219,6 @@ def collect_metrics_once() -> dict:
                 except Exception:
                     voltages[name] = None
             except Exception:
-                # individual voltage may not exist on some boards; mark as None
                 voltages[name] = None
     except Exception:
         voltages = {}
@@ -285,7 +281,7 @@ def collector_loop():
 
 def get_temperature():
     """Get CPU temperature (tries vcgencmd then psutil sensors)."""
-    # Try vcgencmd for Raspberry Pi
+
     try:
         cmd = ['vcgencmd', 'measure_temp']
         result = subprocess.run(
@@ -302,18 +298,17 @@ def get_temperature():
     except Exception:
         pass
 
-    # Try psutil sensors for other platforms
     try:
         if hasattr(psutil, 'sensors_temperatures'):
             temps = psutil.sensors_temperatures()
-            if temps:  # Check if we got any temperature data
+            if temps:
                 for key in ('cpu-thermal', 'coretemp', 'cpu_thermal'):
                     if key in temps and temps[key]:
                         return float(temps[key][0].current)
     except Exception:
         pass
 
-    return 0.0  # Temperature not available
+    return 0.0
 
 
 def get_uptime() -> str:
@@ -435,15 +430,11 @@ def start_collector_thread():
     )
     collector.start()
 
-# Try to initialize DB and start the collector when the module is
-# imported by a WSGI server (e.g. waitress). This ensures tables exist
-# even when the module isn't executed as a script.
+
 try:
     init_db()
     start_collector_thread()
 except Exception:
-    # Swallow errors at import time to avoid breaking WSGI import; the
-    # Flask error handling will report problems if endpoints are used.
     pass
 
 

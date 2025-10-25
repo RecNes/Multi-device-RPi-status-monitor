@@ -16,85 +16,85 @@ CURRENT_USER=$(whoami)
 GUNICORN_EXEC="$PROJECT_PATH/$VENV_DIR/bin/gunicorn"
 
 echo "=================================================="
-echo "Raspberry Pi Web İzleme Uygulaması Kurulumu"
+echo "Raspberry Pi Web Monitoring App Setup"
 echo "=================================================="
 
 check_and_install() {
     PACKAGE=$1
-    echo -n "  -> $PACKAGE kontrol ediliyor... "
+    echo -n "  -> Checking $PACKAGE... "
     if dpkg -s "$PACKAGE" >/dev/null 2>&1; then
-        echo "Kurulu. (✔)"
+        echo "Installed. (✔)"
     else
-        echo "Kurulu değil. Kuruluyor..."
+        echo "Not installed. Installing..."
         sudo apt install -y "$PACKAGE"
     fi
 }
 
-echo "1. Gerekli sistem paketleri kontrol ediliyor ve kuruluyor..."
-sudo apt update # Paket listesini güncelle
+echo "1. Checking and installing required system packages..."
+sudo apt update # Update package list
 check_and_install python3
 check_and_install python3-pip
 check_and_install python3-venv
 check_and_install nginx
 
-echo "2. Python Sanal Ortamı ve Bağımlılıklar hazırlanıyor..."
+echo "2. Preparing Python Virtual Environment and Dependencies..."
 
 if [ ! -f "requirements.txt" ]; then
-    echo "requirements.txt dosyası bulunamadı. Oluşturuluyor..."
+    echo "requirements.txt not found. Creating..."
     cat > requirements.txt <<EOL
 Flask
 psutil
 gunicorn
 EOL
-    echo "requirements.txt dosyası oluşturuldu (Gunicorn dahil edildi)."
+    echo "requirements.txt created (Gunicorn included)."
 fi
 
 if [ ! -d "$VENV_DIR" ]; then
-    echo "  -> Python Sanal Ortamı ($VENV_DIR) oluşturuluyor..."
+    echo "  -> Creating Python Virtual Environment ($VENV_DIR)..."
     python3 -m venv "$VENV_DIR"
 fi
-echo "  -> Sanal ortam etkinleştiriliyor ve kütüphaneler yükleniyor..."
+echo "  -> Activating virtual environment and installing libraries..."
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "3. Nginx konfigürasyonu ayarlanıyor..."
+echo "3. Setting up Nginx configuration..."
 
 if [ ! -f "$NGINX_CONF_SRC" ]; then
-    echo "HATA: Nginx konfigürasyon dosyası ($NGINX_CONF_SRC) bulunamadı."
-    echo "Lütfen bu betiği çalıştırmadan önce '$NGINX_CONF_SRC' dosyasının proje kök dizininde olduğundan emin olun."
+    echo "ERROR: Nginx configuration file ($NGINX_CONF_SRC) not found."
+    echo "Please make sure the '$NGINX_CONF_SRC' file is in the project root directory before running this script."
     deactivate
     exit 1
 fi
 
-echo "  -> Nginx konfigürasyonu kopyalanıyor..."
+echo "  -> Copying Nginx configuration..."
 sudo cp "$NGINX_CONF_SRC" "$NGINX_CONF_DEST"
 
 if [ ! -L "$NGINX_SYMLINK" ]; then
-    echo "  -> Konfigürasyon etkinleştiriliyor (sites-enabled symlink oluşturuluyor)..."
+    echo "  -> Enabling configuration (creating sites-enabled symlink)..."
     sudo ln -s "$NGINX_CONF_DEST" "$NGINX_SYMLINK"
 else
-    echo "  -> Konfigürasyon zaten etkinleştirilmiş."
+    echo "  -> Configuration already enabled."
 fi
 
 if [ -f "/etc/nginx/sites-enabled/default" ] || [ -L "/etc/nginx/sites-enabled/default" ]; then
-    echo "  -> Varsayılan Nginx sitesi kaldırılıyor..."
+    echo "  -> Removing default Nginx site..."
     sudo rm -f /etc/nginx/sites-enabled/default
 fi
 
-echo "  -> Nginx yapılandırması test ediliyor..."
+echo "  -> Testing Nginx configuration..."
 if ! sudo nginx -t; then
-    echo "HATA: Nginx yapılandırma testi başarısız oldu. Lütfen '$NGINX_CONF_SRC' dosyasını kontrol edin."
+    echo "ERROR: Nginx configuration test failed. Please check the '$NGINX_CONF_SRC' file."
     deactivate
     exit 1
 fi
 
-echo "  -> Nginx yeniden başlatılıyor..."
+echo "  -> Restarting Nginx..."
 sudo systemctl restart nginx
 
-echo "4. Gunicorn Systemd Servisi ($SYSTEMD_SERVICE_NAME) kuruluyor..."
+echo "4. Installing Gunicorn Systemd Service ($SYSTEMD_SERVICE_NAME)..."
 
-echo "  -> Servis dosyası oluşturuluyor..."
+echo "  -> Creating service file..."
 sudo bash -c "cat > /etc/systemd/system/$SYSTEMD_SERVICE_NAME" <<EOF
 [Unit]
 Description=Gunicorn instance for RPi Monitor App
@@ -116,22 +116,22 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-echo "  -> Systemd daemon yeniden yükleniyor..."
+echo "  -> Reloading Systemd daemon..."
 sudo systemctl daemon-reload
 
-echo "  -> Servis etkinleştiriliyor ve başlatılıyor..."
+echo "  -> Enabling and starting service..."
 sudo systemctl enable $SYSTEMD_SERVICE_NAME
 sudo systemctl start $SYSTEMD_SERVICE_NAME
 
 
 echo "=================================================="
-echo "Kurulum ve Nginx Ayarları Başarılı!"
+echo "Installation and Nginx Setup Successful!"
 echo ""
-echo "Servis Durumu Kontrolü:"
+echo "Service Status Check:"
 echo "--------------------------"
-echo "Uygulama artık $SYSTEMD_SERVICE_NAME servisi olarak çalışmaktadır."
-echo "Durumunu kontrol etmek için: sudo systemctl status $SYSTEMD_SERVICE_NAME"
-echo "Web uygulamanıza Pi'nizin IP adresinden erişebilirsiniz."
-echo "Örnek: http://<RPI_IP_ADDRESS>:5000/"
+echo "The application is now running as the $SYSTEMD_SERVICE_NAME service."
+echo "To check its status: sudo systemctl status $SYSTEMD_SERVICE_NAME"
+echo "You can access your web application from your Pi's IP address."
+echo "Example: http://<RPI_IP_ADDRESS>:5000/"
 echo ""
 echo "=================================================="

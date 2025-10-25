@@ -1,90 +1,90 @@
-# 🍓 Raspberry Pi Durum İzleme Sayfası
+# 🍓 Raspberry Pi Status Monitoring Page
 
-Bu proje, Raspberry Pi cihazınızın temel sistem metriklerini (CPU kullanımı, RAM, disk, sıcaklık, voltaj ve kısıtlama durumu) gerçek zamanlı olarak gösteren hafif bir Flask tabanlı web uygulamasıdır. Uygulama, Nginx ve Gunicorn arkasında, sistem servisi olarak çalışacak şekilde tasarlanmıştır.
+This project is a lightweight Flask-based web application that displays the basic system metrics of your Raspberry Pi device (CPU usage, RAM, disk, temperature, voltage, and throttling status) in real-time. The application is designed to run as a system service behind Nginx and Gunicorn.
 
-# Ekran görüntüsü
+# Screenshot
 
 <img src="screen_shot.jpg" alt="Project Logo" />
 
-## Özellikler
+## Features
 
-* **Gerçek Zamanlı Veriler:** CPU, RAM ve Disk kullanım yüzdeleri.
+* **Real-Time Data:** CPU, RAM, and Disk usage percentages.
 
-* **Raspberry Pi'ye Özgü Metrikler:**
+* **Raspberry Pi-Specific Metrics:**
 
-  * İşlemci Sıcaklığı (`vcgencmd measure_temp`).
+  * Processor Temperature (`vcgencmd measure_temp`).
 
-  * Çekirdek (Core) ve SDRAM Voltajları.
+  * Core and SDRAM Voltages.
 
-  * **Kritik Durum Kontrolü:** Düşük voltaj veya aşırı ısınma nedeniyle oluşan kısıtlama (throttling) durumunun kontrolü ve uyarısı (`vcgencmd get_throttled`).
+  * **Critical Status Check:** Checks and warns for throttling due to low voltage or overheating (`vcgencmd get_throttled`).
 
-* **Mimari:** Flask + Gunicorn + Nginx (Proxy Pass) + systemd.
+* **Architecture:** Flask + Gunicorn + Nginx (Proxy Pass) + systemd.
 
-* **Kolay Kurulum:** Tek bir Bash betiği (`setup.sh`) ile tüm bağımlılıkları ve servisleri otomatik olarak kurar.
+* **Easy Installation:** Automatically installs all dependencies and services with a single Bash script (`install.sh`).
 
-## Kurulum (Raspberry Pi OS)
+## Installation (Raspberry Pi OS)
 
-Projenizi Git ile indirdikten sonra, kurulumu tek bir komutla tamamlayabilirsiniz.
+After downloading the project with Git, you can complete the installation with a single command.
 
-### 1. Projeyi İndirme
+### 1. Downloading the Project
 
 
-### Proje dizininizi oluşturun ve içine girin
+### Create your project directory and enter it
 
     git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
     cd stand-alone-RPi-status-monitoring-page/
 
 
-### 2. Kurulum Betiğini Çalıştırma
+### 2. Running the Installation Script
 
-`setup.sh` betiği, tüm sistem bağımlılıklarını (Nginx), Python bağımlılıklarını (`Flask`, `psutil`, `gunicorn`) kuracak ve uygulamayı bir `systemd` servisi olarak ayarlayıp Nginx ile bağlayacaktır.
+The `install.sh` script will install all system dependencies (Nginx), Python dependencies (`Flask`, `psutil`, `gunicorn`), set up the application as a `systemd` service, and connect it with Nginx.
 
-**Not:** Betik çalışırken root yetkisi gerektiren komutlar (`sudo`) kullanacaktır.
-
-
-    chmod +x setup.sh
-    ./setup.sh
+**Note:** The script will use commands that require root privileges (`sudo`) during execution.
 
 
-### Betik Ne Yapar?
-
-1. **Sistem Kontrolü:** `python3`, `python3-venv` ve `nginx` paketlerinin kurulu olup olmadığını kontrol eder ve eksikleri kurar.
-
-2. **Sanal Ortam:** Proje klasörünüzün içine `venv` adında bir sanal ortam oluşturur.
-
-3. **Bağımlılıklar:** `requirements.txt` dosyasındaki kütüphaneleri (Flask, psutil, gunicorn) bu ortama yükler.
-
-4. **Nginx Konfigürasyonu:** Proje kök dizinindeki `rpi_monitor.nginx` dosyasını `/etc/nginx/sites-available/` dizinine kopyalar ve etkinleştirir.
-
-5. **Systemd Servisi:** Uygulamayı Gunicorn ile başlatmak için `/etc/systemd/system/rpi_monitor.service` dosyasını oluşturur, servisi etkinleştirir ve hemen başlatır.
+    chmod +x install.sh
+    ./install.sh
 
 
-## Kullanım
+### What Does the Script Do?
 
-Kurulum tamamlandıktan sonra uygulamaya erişmek için, Raspberry Pi'nizin IP adresini web tarayıcınıza yazmanız yeterlidir.
+1. **System Check:** Checks if `python3`, `python3-venv`, and `nginx` packages are installed and installs any missing ones.
+
+2. **Virtual Environment:** Creates a virtual environment named `venv` inside your project folder.
+
+3. **Dependencies:** Installs the libraries from the `requirements.txt` file (Flask, psutil, gunicorn) into this environment.
+
+4. **Nginx Configuration:** Copies the `rpi_monitor.nginx` file from the project's root directory to `/etc/nginx/sites-available/` and enables it.
+
+5. **Systemd Service:** Creates the `/etc/systemd/system/rpi_monitor.service` file to start the application with Gunicorn, enables the service, and starts it immediately.
 
 
-**Örnek:** `http://[Raspberry Pi'nizin IP Adresi]:5000/`
+## Usage
+
+After the installation is complete, you can access the application by typing the IP address of your Raspberry Pi into your web browser.
 
 
-## Bakım ve Yönetim
+**Example:** `http://[Your Raspberry Pi's IP Address]:5000/`
 
-Uygulamanız bir `systemd` servisi olarak çalıştığı için, yönetim işlemleri basittir:
 
-| İşlem | Komut | Açıklama |
+## Maintenance and Management
+
+Since your application runs as a `systemd` service, management is simple:
+
+| Action | Command | Description |
 | :--- | :--- | :--- |
-| **Durumu Kontrol Etme** | `sudo systemctl status rpi_monitor.service` | Servisin çalışıp çalışmadığını, son günlükleri ve hataları gösterir. |
-| **Yeniden Başlatma** | `sudo systemctl restart rpi_monitor.service` | Kodda bir değişiklik yaptığınızda servisi yeniden başlatır. |
-| **Durdurma** | `sudo systemctl stop rpi_monitor.service` | Servisi durdurur. |
-| **Otomatik Başlatmayı Kaldırma** | `sudo systemctl disable rpi_monitor.service` | Cihaz yeniden başlatıldığında otomatik olarak çalışmasını engeller. |
+| **Check Status** | `sudo systemctl status rpi_monitor.service` | Shows if the service is running, recent logs, and errors. |
+| **Restart** | `sudo systemctl restart rpi_monitor.service` | Restarts the service when you make a change in the code. |
+| **Stop** | `sudo systemctl stop rpi_monitor.service` | Stops the service. |
+| **Disable Auto-Start** | `sudo systemctl disable rpi_monitor.service` | Prevents the service from starting automatically when the device reboots. |
 
 
-## Proje Dosyaları
+## Project Files
 
-| Dosya Adı | Açıklama |
+| File Name | Description |
 | :--- | :--- |
-| `app.py` | Flask uygulamasının ana Python kodu. Sistem metriklerini toplar. |
-| `templates/index.html` | Uygulamanın arayüz şablonu. Verileri düzenli bir şekilde gösterir. |
-| `requirements.txt` | Python bağımlılıklarını listeler (`Flask`, `psutil`, `gunicorn`). |
-| `setup.sh` | Tüm sistem kurulumunu otomatikleştiren Bash betiği. |
-| `rpi_monitor.nginx` | Nginx için proxy konfigürasyonu. İsteği Gunicorn soketine yönlendirir. |
+| `app.py` | The main Python code for the Flask application. Collects system metrics. |
+| `templates/index.html` | The interface template for the application. Displays the data in an organized way. |
+| `requirements.txt` | Lists the Python dependencies (`Flask`, `psutil`, `gunicorn`). |
+| `install.sh` | The Bash script that automates the entire system setup. |
+| `rpi_monitor.nginx` | The proxy configuration for Nginx. Forwards requests to the Gunicorn socket. |
