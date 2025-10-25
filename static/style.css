@@ -1,0 +1,304 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Reduce overall UI size by 25% (scale to 75%).
+   We scale the body and compensate the width so the layout
+   continues to fill the viewport. This reduces all visual
+   elements proportionally. */
+body {
+    transform: scale(0.75);
+    transform-origin: 0 0;
+    width: 133.3333%; /* 100 / 0.75 */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(to right, #2c3e50, #4a6491);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0px;
+}
+
+header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.card-header i {
+    font-size: 1.8rem;
+    margin-right: 10px;
+}
+
+.card-header.cpu { color: #3498db; }
+.card-header.memory { color: #2ecc71; }
+.card-header.disk { color: #e74c3c; }
+.card-header.temp { color: #f39c12; }
+.card-header.network { color: #9b59b6; }
+.card-header.uptime { color: #1abc9c; }
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.progress-container {
+    margin: 15px 0;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.progress-bar {
+    height: 20px;
+    background-color: #ecf0f1;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.progress-fill.cpu { 
+    background: linear-gradient(to right, #3498db, #2980b9); 
+    width: 0%; 
+}
+.progress-fill.memory { 
+    background: linear-gradient(to right, #2ecc71, #27ae60); 
+    width: 0%; 
+}
+.progress-fill.disk { 
+    background: linear-gradient(to right, #e74c3c, #c0392b); 
+    width: 0%; 
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-good { background-color: #2ecc71; }
+.status-warning { background-color: #f1c40f; }
+.status-critical { background-color: #e74c3c; }
+
+.interface-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.interface-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.interface-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.interface-speed {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    color: #666;
+    padding: 4px 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.network-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.network-stat {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.network-stat-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #9b59b6;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .dashboard {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard {
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .card {
+        padding: 12px;
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+    }
+    
+    .network-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-container {
+    margin-top: 20px;
+    height: 200px;
+    position: relative;
+}
+
+.progress-fill.low {
+    background: linear-gradient(to right, #2ecc71, #27ae60) !important;
+}
+.progress-fill.medium {
+    background: linear-gradient(to right, #f1c40f, #f39c12) !important;
+}
+
+.progress-fill.high {
+    background: linear-gradient(to right, #e74c3c, #c0392b) !important;
+}
+
+.toggle-button {
+    display: block;
+    text-align: center;
+    margin: 10px auto 0;
+    font-size: 1.3rem;
+    color: #3498db;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.toggle-button:hover {
+    text-decoration: underline;
+}
+
+.stat-small {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.stat-row .stat-value {
+    font-size: 1.5rem; /* Smaller font for side-by-side display */
+    margin: 0;
+}
