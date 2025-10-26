@@ -1,13 +1,13 @@
 [Unit]
-Description=RPi Monitor Server
-After=network.target
+Description=Gunicorn instance to serve RPi Monitor
 
 [Service]
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/rpi-monitor/server
-ExecStart=/usr/bin/python3 /home/pi/rpi-monitor/server/server.py
+User=root
+Group=root
+WorkingDirectory=/opt/rpi-monitor-server
+ExecStart=/opt/rpi-monitor-server/venv/bin/gunicorn --workers 3 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+server.modules += ( "mod_proxy", "mod_alias" )
+
+server.document-root = "/var/www/html"
+
+alias.url = ( "/static/" => "/opt/rpi-monitor-server/static/" )
+
+$HTTP["url"] !~ "^/static/" {
+    proxy.server  = ( "" => ( ( "socket" => "/tmp/rpi_monitor.sock" ) ) )
+}

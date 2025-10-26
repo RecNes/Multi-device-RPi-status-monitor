@@ -1,5 +1,5 @@
 server {
-    listen 5000;
+    listen 80;
     server_name _; 
 
     location / {
@@ -11,9 +11,9 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # location /static {
-    #     alias /home/pi/rpi_monitor_app/static;
-    # }
+    location /static {
+        alias /opt/rpi-monitor-server/static;
+    }
 
     error_log /var/log/nginx/rpi_monitor_error.log;
     access_log /var/log/nginx/rpi_monitor_access.log;

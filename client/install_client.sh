@@ -36,9 +36,12 @@ echo "Configuring server URL in client script..."
 # Use sed to replace the placeholder URL. The '#' is used as a delimiter to avoid issues with slashes in the URL.
 sed -i "s#^SERVER_URL = .*#SERVER_URL = '$SERVER_URL'#" "$CLIENT_PY_FILE"
 
-echo "Installing Python dependencies..."
+echo "Creating Python virtual environment..."
+python3 -m venv "$INSTALL_DIR/venv"
+
+echo "Installing Python dependencies into virtual environment..."
 if [ -f "$REQUIREMENTS_FILE" ]; then
-    pip3 install -r "$REQUIREMENTS_FILE"
+    "$INSTALL_DIR/venv/bin/pip" install -r "$REQUIREMENTS_FILE"
 else
     echo "WARNING: requirements.txt not found. Skipping dependency installation."
 fi
@@ -54,7 +57,7 @@ After=network.target
 User=root
 Group=root
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$(which python3) $CLIENT_PY_FILE
+ExecStart=$INSTALL_DIR/venv/bin/python $CLIENT_PY_FILE
 Restart=always
 RestartSec=10
 
