@@ -5,12 +5,11 @@ Raspberry Pi Status Monitor - Server
 Receives data from multiple clients, stores it in SQLite,
 and serves a web interface to view the data.
 """
-
-import sqlite3
-import json
-from flask import Flask, render_template, jsonify, request
 import os
+import sqlite3
 from datetime import datetime
+
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
@@ -19,16 +18,19 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'system
 # Can be overridden by setting environment variable RETENTION_DAYS.
 RETENTION_DAYS = int(os.environ.get('RETENTION_DAYS', '30'))
 
+
 def get_db_conn():
     """Get a database connection."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 @app.route('/')
 def index():
     """Render the main dashboard page."""
     return render_template('index.html')
+
 
 @app.route('/api/devices', methods=['GET'])
 def get_devices():
@@ -37,6 +39,7 @@ def get_devices():
     devices = conn.execute('SELECT * FROM devices ORDER BY last_seen DESC').fetchall()
     conn.close()
     return jsonify([dict(row) for row in devices])
+
 
 @app.route('/api/register', methods=['POST'])
 def register_device():
@@ -80,6 +83,7 @@ def register_device():
     conn.close()
     return jsonify({'status': 'success', 'device_id': device_id}), 200 if not device else 201
 
+
 @app.route('/api/data', methods=['POST'])
 def receive_data():
     """Receive and store metrics from a client."""
@@ -116,9 +120,8 @@ def receive_data():
             metrics['disk']['percentage'],
             metrics.get('temperature', 0.0)
         ))
-        stats_id = cursor.lastrowid
+        # stats_id = cursor.lastrowid
 
-        # Update device last_seen
         cursor.execute('UPDATE devices SET last_seen = ? WHERE id = ?', (datetime.utcnow(), device_id))
 
         conn.commit()
@@ -130,6 +133,7 @@ def receive_data():
         conn.close()
 
     return jsonify({'status': 'success'}), 201
+
 
 @app.route('/api/history/<int:device_id>')
 def api_history(device_id):
@@ -150,6 +154,7 @@ def api_history(device_id):
 
     history = [dict(row) for row in rows]
     return jsonify(history)
+
 
 @app.route('/api/latest/<int:device_id>')
 def api_latest(device_id):
@@ -181,4 +186,3 @@ if __name__ == '__main__':
         port=5000,
         debug=True
     )
-
