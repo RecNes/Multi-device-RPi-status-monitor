@@ -27,8 +27,32 @@ cp -r "$SCRIPT_DIR"/templates "$INSTALL_DIR/"
 cp "$PROJECT_ROOT_DIR"/create_tables.py "$INSTALL_DIR/"
 cp "$PROJECT_ROOT_DIR"/system_stats.db "$INSTALL_DIR/" 2>/dev/null || true # Copy db if it exists
 
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Ensure python3-venv is installed
+if command_exists apt-get; then
+    if ! dpkg -s python3-venv >/dev/null 2>&1; then
+        echo "python3-venv not found. Attempting to install..."
+        apt-get update && apt-get install -y python3-venv
+    fi
+elif command_exists yum; then
+    if ! rpm -q python3-virtualenv >/dev/null 2>&1; then
+        echo "python3-virtualenv not found. Attempting to install..."
+        yum install -y python3-virtualenv
+    fi
+fi
+
 echo "Creating Python virtual environment..."
 python3 -m venv "$INSTALL_DIR/venv"
+
+# Verify venv creation
+if [ ! -f "$INSTALL_DIR/venv/bin/python" ]; then
+    echo "Error: Python virtual environment creation failed."
+    echo "Please ensure 'python3-venv' is installed and try again."
+    exit 1
+fi
 
 echo "Installing Python dependencies and Gunicorn..."
 if [ -f "$REQUIREMENTS_FILE" ]; then
@@ -41,10 +65,6 @@ fi
 echo "Initializing database..."
 # Run the create_tables.py script within the installation directory
 (cd "$INSTALL_DIR" && venv/bin/python create_tables.py)
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
 
 WEBSERVER=""
 
@@ -63,7 +83,6 @@ if [ -z "$WEBSERVER" ]; then
         if command_exists lighttpd; then
             WEBSERVER="lighttpd"
         fi
-    fi
     elif command_exists yum; then
         yum install -y lighttpd
         if command_exists lighttpd; then
