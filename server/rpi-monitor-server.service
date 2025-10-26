@@ -3,7 +3,7 @@ Description=Gunicorn instance to serve RPi Monitor
 
 [Service]
 User=root
-Group=root
+Group=www-data
 WorkingDirectory=/opt/rpi-monitor-server
 ExecStart=/opt/rpi-monitor-server/venv/bin/gunicorn --workers 3 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app
 Restart=always
