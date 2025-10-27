@@ -2,7 +2,6 @@
 
 # This script installs the RPi Monitor Server component and sets it up as a systemd service.
 
-# Ensure the script is run as root
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
   exit 1
@@ -24,14 +23,11 @@ echo "Copying application files..."
 cp -r "$SCRIPT_DIR"/*.py "$INSTALL_DIR/"
 cp -r "$SCRIPT_DIR"/static "$INSTALL_DIR/"
 cp -r "$SCRIPT_DIR"/templates "$INSTALL_DIR/"
-cp "$PROJECT_ROOT_DIR"/create_tables.py "$INSTALL_DIR/"
-cp "$PROJECT_ROOT_DIR"/system_stats.db "$INSTALL_DIR/" 2>/dev/null || true # Copy db if it exists
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Ensure python3-venv is installed
 if command_exists apt-get; then
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
         echo "python3-venv not found. Attempting to install..."
@@ -47,7 +43,6 @@ fi
 echo "Creating Python virtual environment..."
 python3 -m venv "$INSTALL_DIR/venv"
 
-# Verify venv creation
 if [ ! -f "$INSTALL_DIR/venv/bin/python" ]; then
     echo "Error: Python virtual environment creation failed."
     echo "Please ensure 'python3-venv' is installed and try again."
@@ -63,7 +58,6 @@ else
 fi
 
 echo "Initializing database..."
-# Run the create_tables.py script within the installation directory
 (cd "$INSTALL_DIR" && venv/bin/python create_tables.py)
 
 WEBSERVER=""
@@ -121,32 +115,26 @@ if [ "$WEBSERVER" = "lighttpd" ]; then
     cp "$LIGHTTPD_CONFIG_SRC" "$LIGHTTPD_CONFIG_DEST"
     ln -sfn "$LIGHTTPD_CONFIG_DEST" "/etc/lighttpd/conf-enabled/10-rpi_monitor.conf"
     
-    # Enable proxy module
     lighty-enable-mod proxy
     
     systemctl restart lighttpd
 else
     echo "Configuring Nginx..."
-    # Nginx configuration
+
     NGINX_CONFIG_SRC="$SCRIPT_DIR/rpi_monitor.nginx"
     NGINX_CONFIG_DEST="/etc/nginx/sites-available/rpi_monitor"
     NGINX_SYMLINK="/etc/nginx/sites-enabled/rpi_monitor"
 
-    # Check if the destination directory exists
     if [ ! -d "/etc/nginx/sites-available" ]; then
-        # For RHEL/CentOS-based systems
         NGINX_CONFIG_DEST="/etc/nginx/conf.d/rpi_monitor.conf"
-        NGINX_SYMLINK="" # Not needed for conf.d
+        NGINX_SYMLINK=""
     fi
 
     cp "$NGINX_CONFIG_SRC" "$NGINX_CONFIG_DEST"
-    # Update the static file path in the nginx config
     sed -i "s|alias /home/pi/rpi_monitor_app/static;|alias $INSTALL_DIR/static;|" "$NGINX_CONFIG_DEST"
 
     if [ -n "$NGINX_SYMLINK" ]; then
-      # Remove default config on Debian-based systems if it exists
-      rm -f /etc/nginx/sites-enabled/default
-      # Create symlink
+      # rm -f /etc/nginx/sites-enabled/default
       ln -sfn "$NGINX_CONFIG_DEST" "$NGINX_SYMLINK"
     fi
     
@@ -155,7 +143,6 @@ fi
 
 echo "Creating systemd service file for Gunicorn..."
 
-# Create the service file content for Gunicorn
 SERVICE_CONTENT="[Unit]
 Description=Gunicorn instance to serve RPi Monitor
 After=network.target

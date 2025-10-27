@@ -302,3 +302,7 @@ footer {
     font-size: 1.5rem; /* Smaller font for side-by-side display */
     margin: 0;
 }
+
+.hidden {
+    display: none;
+}

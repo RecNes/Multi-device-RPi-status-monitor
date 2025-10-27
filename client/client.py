@@ -9,14 +9,21 @@ import os
 
 # This will be configured during installation
 SERVER_URL = 'http://localhost:5000'
-COLLECT_INTERVAL = 10 # seconds
+if not SERVER_URL.startswith('http'):
+    SERVER_URL = 'http://' + SERVER_URL
+if not SERVER_URL.endswith(':5000/') or not SERVER_URL.endswith(':5000'):
+    SERVER_URL = SERVER_URL.rstrip('/') + ':5000'
+
+COLLECT_INTERVAL = 10  # seconds
 CLIENT_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'client_config.json')
 LOCAL_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local_cache.db')
+
 
 def get_device_uid():
     """Generate a unique device ID from the MAC address."""
     mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0,8*6,8)][::-1])
     return mac
+
 
 def get_hostname():
     """Get the system hostname."""
@@ -25,6 +32,7 @@ def get_hostname():
     except Exception:
         import socket
         return socket.gethostname()
+
 
 def init_local_db():
     """Initialize the local SQLite database for caching."""
@@ -38,6 +46,7 @@ def init_local_db():
     conn.commit()
     conn.close()
 
+
 def get_temperature():
     """Get CPU temperature (tries vcgencmd then psutil sensors)."""
     try:
@@ -47,7 +56,8 @@ def get_temperature():
         temp = float(temp_str.replace('temp=', '').replace("'C", ''))
         return temp
     except (FileNotFoundError, subprocess.CalledProcessError):
-        pass # vcgencmd not available
+        # vcgencmd not available
+        pass
 
     try:
         if hasattr(psutil, 'sensors_temperatures'):
@@ -60,6 +70,7 @@ def get_temperature():
         pass
 
     return 0.0
+
 
 def collect_metrics_once():
     """Collect a one-off snapshot of system metrics."""
@@ -86,6 +97,7 @@ def collect_metrics_once():
     }
     return metrics
 
+
 def load_config():
     """Load client configuration from file."""
     if not os.path.exists(CLIENT_CONFIG_FILE):
@@ -96,10 +108,12 @@ def load_config():
     except (IOError, json.JSONDecodeError):
         return None
 
+
 def save_config(config):
     """Save client configuration to file."""
     with open(CLIENT_CONFIG_FILE, 'w') as f:
         json.dump(config, f, indent=4)
+
 
 def register_client():
     """Register this client with the server and save the config."""
@@ -122,6 +136,7 @@ def register_client():
         print(f"Error registering with server: {e}")
         return None
 
+
 def send_data(config, metrics):
     """Send a single data point to the server."""
     payload = {
@@ -136,6 +151,7 @@ def send_data(config, metrics):
         print(f"Could not send data to server: {e}")
         return False
 
+
 def cache_data(metrics):
     """Save metrics to the local cache."""
     conn = sqlite3.connect(LOCAL_DB_PATH)
@@ -144,6 +160,7 @@ def cache_data(metrics):
     conn.commit()
     conn.close()
     print("Data cached locally.")
+
 
 def send_cached_data(config):
     """Send all cached data to the server and clear cache on success."""
@@ -172,6 +189,7 @@ def send_cached_data(config):
             break
     conn.close()
 
+
 def main():
     init_local_db()
     config = load_config()
@@ -197,6 +215,7 @@ def main():
             cache_data(metrics)
 
         time.sleep(COLLECT_INTERVAL)
+
 
 if __name__ == '__main__':
     main()

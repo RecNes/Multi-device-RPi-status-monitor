@@ -5,6 +5,7 @@ c = conn.cursor()
 
 c.execute('''CREATE TABLE IF NOT EXISTS stats (
              id INTEGER PRIMARY KEY AUTOINCREMENT,
+             device_id INTEGER,
              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
              cpu_usage REAL,
              cpu_frequency TEXT,
@@ -14,7 +15,8 @@ c.execute('''CREATE TABLE IF NOT EXISTS stats (
              disk_used REAL,
              disk_total REAL,
              disk_percentage REAL,
-             temperature REAL
+             temperature REAL,
+             FOREIGN KEY(device_id) REFERENCES devices(id)
              )''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS network_stats (
@@ -30,6 +32,15 @@ c.execute('''CREATE TABLE IF NOT EXISTS network_stats (
              is_up BOOLEAN,
              addresses TEXT,
              FOREIGN KEY(stats_id) REFERENCES stats(id)
+             )''')
+
+c.execute('''CREATE TABLE IF NOT EXISTS devices (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             device_uid TEXT NOT NULL UNIQUE,
+             device_name TEXT,
+             ip_address TEXT,
+             hostname TEXT,
+             last_seen DATETIME
              )''')
 
 conn.commit()

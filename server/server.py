@@ -13,7 +13,7 @@ from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'system_stats.db')
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'system_stats.db')
 # Retention in days for historical records. Default 30 (about 1 month).
 # Can be overridden by setting environment variable RETENTION_DAYS.
 RETENTION_DAYS = int(os.environ.get('RETENTION_DAYS', '30'))
@@ -92,7 +92,7 @@ def receive_data():
         return jsonify({'error': 'device_id and metrics are required'}), 400
 
     device_id = data['device_id']
-    metrics = data['metrics'] # This is now a single metrics object
+    metrics = data['metrics']
 
     conn = get_db_conn()
     cursor = conn.cursor()
@@ -103,7 +103,6 @@ def receive_data():
         if not cursor.fetchone():
             return jsonify({'error': 'Device not registered'}), 404
 
-        # Insert the main stats record
         cursor.execute('''INSERT INTO stats (
                     device_id, cpu_usage, cpu_frequency, memory_used, memory_total,
                     memory_percentage, disk_used, disk_total, disk_percentage,
@@ -141,16 +140,20 @@ def api_history(device_id):
     conn = get_db_conn()
     c = conn.cursor()
 
-    c.execute('''
-        SELECT timestamp, cpu_usage, memory_percentage,
-               disk_percentage, temperature
-        FROM stats
-        WHERE device_id = ?
-        ORDER BY timestamp DESC
-        LIMIT 100
-    ''', (device_id,))
-    rows = c.fetchall()
-    conn.close()
+    try:
+        c.execute('''
+            SELECT timestamp, cpu_usage, memory_percentage,
+                   disk_percentage, temperature
+            FROM stats
+            WHERE device_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 100
+        ''', (device_id,))
+        rows = c.fetchall()
+    except:
+        rows = []
+    finally:
+        conn.close()
 
     history = [dict(row) for row in rows]
     return jsonify(history)
@@ -162,16 +165,20 @@ def api_latest(device_id):
     conn = get_db_conn()
     c = conn.cursor()
 
-    c.execute('''
-        SELECT s.*, d.device_name, d.hostname, d.ip_address
-        FROM stats s
-        JOIN devices d ON s.device_id = d.id
-        WHERE s.device_id = ?
-        ORDER BY s.timestamp DESC
-        LIMIT 1
-    ''', (device_id,))
-    latest = c.fetchone()
-    conn.close()
+    try:
+        c.execute('''
+            SELECT s.*, d.device_name, d.hostname, d.ip_address
+            FROM stats s
+            JOIN devices d ON s.device_id = d.id
+            WHERE s.device_id = ?
+            ORDER BY s.timestamp DESC
+            LIMIT 1
+        ''', (device_id,))
+        latest = c.fetchone()
+    except:
+        latest = []
+    finally:
+        conn.close()
 
     if not latest:
         return jsonify({'error': 'No data for this device'}), 404

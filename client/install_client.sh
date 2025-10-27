@@ -2,7 +2,6 @@
 
 # This script installs the RPi Monitor Client component and sets it up as a systemd service.
 
-# Ensure the script is run as root
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
   exit 1
@@ -20,7 +19,6 @@ fi
 
 echo "Server URL set to: $SERVER_URL"
 
-# Define paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 INSTALL_DIR="/opt/rpi-monitor-client"
 SERVICE_NAME="rpi-monitor-client.service"
@@ -33,7 +31,6 @@ mkdir -p $INSTALL_DIR
 cp "$SCRIPT_DIR"/*.py "$INSTALL_DIR/"
 
 echo "Configuring server URL in client script..."
-# Use sed to replace the placeholder URL. The '#' is used as a delimiter to avoid issues with slashes in the URL.
 sed -i "s#^SERVER_URL = .*#SERVER_URL = '$SERVER_URL'#" "$CLIENT_PY_FILE"
 
 echo "Creating Python virtual environment..."
@@ -48,7 +45,6 @@ fi
 
 echo "Creating systemd service file..."
 
-# Create the service file content
 SERVICE_CONTENT="[Unit]
 Description=RPi Monitor Client
 After=network.target
