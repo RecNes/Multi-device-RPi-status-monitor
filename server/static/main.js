@@ -41,16 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateLatestMetrics = (data) => {
-        // System Info
+
         updateText('hostname', data.hostname || 'N/A');
         updateText('ip_address', data.ip_address || 'N/A');
-        // Append 'Z' to timestamp to ensure it's parsed as UTC
+
         updateText('last_seen', new Date(data.timestamp + 'Z').toLocaleString());
         updateText('uptime', formatUptime(data.uptime));
 
-        // CPU
-        const cpuUsage = parseFloat(data.cpu_usage).toFixed(1) + ' %';
-        updateText('cpu-usage', cpuUsage);
+        const cpuUsage = parseFloat(data.cpu_usage).toFixed(1);
+        updateText('cpu-usage', cpuUsage + ' %');
         updateProgressBar('cpu-bar', cpuUsage);
 
         let [cpuFreq, _] = data.cpu_frequency.split(' ');
@@ -63,16 +62,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateText('cpu-frequency', cpuFreq + ' ' + freqUnit || 'N/A');
 
-        // Memory
-        const memPerc = parseFloat(data.memory_percentage).toFixed(1) + ' %';
-        updateText('memory-usage', memPerc);
+        const memPerc = parseFloat(data.memory_percentage).toFixed(1);
+        updateText('memory-usage', memPerc + ' %');
         updateProgressBar('memory-bar', memPerc);
         updateText('memory-used', data.memory_used);
         updateText('memory-total', data.memory_total);
 
         // Disk
-        const diskPerc = parseFloat(data.disk_percentage).toFixed(1) + ' %';
-        updateText('disk-usage', diskPerc);
+        const diskPerc = parseFloat(data.disk_percentage).toFixed(1);
+        updateText('disk-usage', diskPerc + ' %');
         updateProgressBar('disk-bar', diskPerc);
         updateText('disk-used', data.disk_used);
         updateText('disk-total', data.disk_total);

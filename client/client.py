@@ -57,19 +57,14 @@ def get_temperature():
         return temp
     except (FileNotFoundError, subprocess.CalledProcessError):
         # vcgencmd not available
-        pass
-
-    try:
+        max_temp = 0
         if hasattr(psutil, 'sensors_temperatures'):
             temps = psutil.sensors_temperatures()
-            if temps:
-                for key in ('cpu-thermal', 'coretemp', 'cpu_thermal', 'k10temp'):
-                    if key in temps and temps[key]:
-                        return float(temps[key][0].current)
-    except Exception:
-        pass
-
-    return 0.0
+            if "coretemp" in temps:
+                for entry in temps["coretemp"]:
+                    if max_temp <= entry.current:
+                        max_temp = entry.current
+        return max_temp
 
 
 def get_throttle_info():

@@ -17,8 +17,8 @@
                 <select class="form-control" id="device-selector">
                     <option>Loading devices...</option>
                 </select>
-                <span class="uptime">⏱️ Uptime:</span>
-                <span id="uptime">{ system_info.uptime }</span>
+                <span>⏱️ Uptime:</span>
+                <span class="uptime">N/A</span>
             </div>
         </header>
         
@@ -37,7 +37,7 @@
                         <span class="cpu-usage">0 %</span>
                     </div>
                     <div class="progress-bar progress">
-                        <div id="cpu-bar cpu-progress" class="progress-fill cpu progress-bar" role="progressbar" style="width: 0%; width: { system_info.cpu.usage }%"></div>
+                        <div id="cpu-bar" class="progress-fill cpu progress-bar" role="progressbar" style="width: 0%;"></div>
                     </div>
                 </div>
                 <div class="chart-container small-charts">
@@ -56,7 +56,7 @@
                         <span class="memory-percentage memory-usage">0 %</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill memory" id="memory-progress" style="width: { system_info.memory.percentage }%"></div>
+                        <div id="memory-bar" class="progress-fill memory progress-bar" style="width: 0%"></div>
                     </div>
                 </div>
                 <div class="chart-container small-charts">
@@ -75,7 +75,7 @@
                         <span class="disk-usage">0 %</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill disk" id="disk-progress" style="width: { system_info.disk.percentage }%"></div>
+                        <div id="disk-bar" class="progress-fill disk progress-bar" style="width: 0%"></div>
                     </div>
                 </div>
                 <div class="chart-container small-charts">
@@ -87,7 +87,7 @@
                 <div class="card-header temp">
                     <span>🌡️ Temperature</span>
                 </div>
-                <div class="stat-value" id="temperature">0.0 °C</div>
+                <div class="stat-value temperature">0.0 °C</div>
                 <div class="chart-container">
                     <canvas id="temp-chart"></canvas>
                 </div>
