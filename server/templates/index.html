@@ -3,94 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPi Status Monitor</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Raspberry Pi Status Monitor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>RPi Status Monitor</h1>
+        <header>
+            <h1>Raspberry Pi Status Monitor</h1>
+            <p>Real-time system monitoring with historical data</p>
             <div class="form-group">
                 <label for="device-selector">Select Device:</label>
                 <select class="form-control" id="device-selector">
                     <option>Loading devices...</option>
                 </select>
+                <span class="uptime">⏱️ Uptime:</span>
+                <span id="uptime">{ system_info.uptime }</span>
             </div>
-        </div>
+        </header>
+        
+        <div class="dashboard hidden" id="metrics-container">
+            <div class="card">
+                <div class="card-header cpu">
+                    <span>🖥️ CPU</span>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-value cpu-usage">0 %</span> / 
+                    <span class="stat-value cpu-frequency">0 MHz</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="cpu-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar progress">
+                        <div id="cpu-bar cpu-progress" class="progress-fill cpu progress-bar" role="progressbar" style="width: 0%; width: { system_info.cpu.usage }%"></div>
+                    </div>
+                </div>
+                <div class="chart-container small-charts">
+                    <canvas id="cpu-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header memory">
+                    <span>💾 Memory</span>
+                </div>
+                <div class="stat-value"><span class="memory-used">0</span> GB / <span class="memory-total">0</span> GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="memory-percentage memory-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill memory" id="memory-progress" style="width: { system_info.memory.percentage }%"></div>
+                    </div>
+                </div>
+                <div class="chart-container small-charts">
+                    <canvas id="memory-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header disk">
+                    <span>💿 Disk</span>
+                </div>
+                <div class="stat-value"><span class="disk-used">0</span> GB / <span class="disk-total">0</span> GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="disk-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill disk" id="disk-progress" style="width: { system_info.disk.percentage }%"></div>
+                    </div>
+                </div>
+                <div class="chart-container small-charts">
+                    <canvas id="disk-chart"></canvas>
+                </div>
+            </div>
 
-        <div id="metrics-container" class="hidden">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">System Info</div>
-                        <div class="card-body">
-                            <p><strong>Hostname:</strong> <span id="hostname">N/A</span></p>
-                            <p><strong>IP Address:</strong> <span id="ip_address">N/A</span></p>
-                            <p><strong>Last Seen:</strong> <span id="last_seen">N/A</span></p>
-                            <p><strong>Uptime:</strong> <span id="uptime">N/A</span></p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">CPU</div>
-                        <div class="card-body">
-                            <p>Usage: <span id="cpu-usage">0</span>%</p>
-                            <div class="progress">
-                                <div id="cpu-bar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
-                            </div>
-                            <p class="mt-2">Frequency: <span id="cpu-frequency">N/A</span></p>
-                        </div>
-                    </div>
+            <div class="card">
+                <div class="card-header temp">
+                    <span>🌡️ Temperature</span>
                 </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">Memory</div>
-                        <div class="card-body">
-                            <p>Usage: <span id="memory-usage">0</span>% (<span id="memory-used">0</span> GB / <span id="memory-total">0</span> GB)</p>
-                            <div class="progress">
-                                <div id="memory-bar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">Disk</div>
-                        <div class="card-body">
-                            <p>Usage: <span id="disk-usage">0</span>% (<span id="disk-used">0</span> GB / <span id="disk-total">0</span> GB)</p>
-                            <div class="progress">
-                                <div id="disk-bar" class="progress-bar" role="progressbar" style="width: 0%;"></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="stat-value" id="temperature">0.0 °C</div>
+                <div class="chart-container">
+                    <canvas id="temp-chart"></canvas>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">Temperature</div>
-                        <div class="card-body">
-                            <p><span id="temperature">0</span> °C</p>
+            
+            <div class="card">
+                <div class="card-header network">
+                    <span>🌐 Network</span>
+                </div>
+                <div class="interface-list" id="interface-list">
+                    <!-- Network interfaces will be populated by JavaScript -->
+                    { for iface, stats in system_info.network.interfaces.items() }
+                    <div class="interface-card">
+                        <h3>{ iface }</h3>
+                        { if stats.speed }
+                        <div class="interface-speed">{ stats.speed } Mbps</div>
+                        { endif }
+                        <div class="network-stats">
+                            <div class="network-stat">
+                                <div>Sent</div>
+                                <div class="network-stat-value" id="bytes-sent-{ iface }">
+                                    { "{:,}".format(stats.bytes_sent) } Bytes
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Received</div>
+                                <div class="network-stat-value" id="bytes-recv-{ iface }">
+                                    { "{:,}".format(stats.bytes_recv) } Bytes
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Sent</div>
+                                <div class="network-stat-value" id="packets-sent-{ iface }">
+                                    { "{:,}".format(stats.packets_sent) }
+                                </div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Received</div>
+                                <div class="network-stat-value" id="packets-recv-{ iface }">
+                                    { "{:,}".format(stats.packets_recv) }
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    { endfor }
                 </div>
             </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">History</div>
-                        <div class="card-body">
-                            <canvas id="history-chart"></canvas>
-                        </div>
-                    </div>
+            
+            <div class="card">
+                <div class="card-header uptime">
+                    <span>⚡ Voltages</span>
                 </div>
+                <div class="stat-value">
+                    <a href="#" id="toggle-details" class="toggle-button">Show Voltage Details</a>
+                </div>
+                <div class="stat-small" id="details-content" style="display: none;">
+                    <div>Throttled: <span id="throttled">{ system_info.throttled or 'N/A' }</span></div>
+                    <div>Voltage (core): <span id="voltage-core">{ system_info.voltages.core if system_info.voltages and system_info.voltages.core else 'N/A' }</span> V</div>
+                    <div>Voltage (SDRAM_C): <span id="voltage-sdram-c">{ system_info.voltages.sdram_c if system_info.voltages and system_info.voltages.sdram_c else 'N/A' }</span> V</div>
+                    <div>Voltage (SDRAM_I): <span id="voltage-sdram-i">{ system_info.voltages.sdram_i if system_info.voltages and system_info.voltages.sdram_i else 'N/A' }</span> V</div>
+                    <div>Voltage (SDRAM_P): <span id="voltage-sdram-p">{ system_info.voltages.sdram_p if system_info.voltages and system_info.voltages.sdram_p else 'N/A' }</span> V</div>
+                </div>
+                <div class="chart-container small-charts">
+                    <canvas id="volt-throttle-chart" style="height:160px"></canvas>
+                </div>
+            </div>
+            <div id="no-devices-message" class="hidden">
+                <h2>No devices are reporting to the server.</h2>
+                <p>Please make sure your clients are configured and running.</p>
             </div>
         </div>
-        <div id="no-devices-message" class="hidden">
-            <h2>No devices are reporting to the server.</h2>
-            <p>Please make sure your clients are configured and running.</p>
-        </div>
+        
+        <footer>
+            <p>Real-time monitoring | Historical data stored in database</p>
+        </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

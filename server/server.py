@@ -5,9 +5,10 @@ Raspberry Pi Status Monitor - Server
 Receives data from multiple clients, stores it in SQLite,
 and serves a web interface to view the data.
 """
+import json
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask, render_template, jsonify, request
 
@@ -38,7 +39,8 @@ def get_devices():
     conn = get_db_conn()
     devices = conn.execute('SELECT * FROM devices ORDER BY last_seen DESC').fetchall()
     conn.close()
-    return jsonify([dict(row) for row in devices])
+    devices_list = [dict(row) for row in devices]
+    return jsonify(devices_list)
 
 
 @app.route('/api/register', methods=['POST'])
@@ -52,7 +54,7 @@ def register_device():
     device_name = data.get('device_name', 'Unnamed Device')
     hostname = data.get('hostname')
     ip_address = request.remote_addr
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     conn = get_db_conn()
     cursor = conn.cursor()
@@ -61,7 +63,6 @@ def register_device():
     device = cursor.fetchone()
 
     if device:
-        # Device exists, update it
         device_id = device['id']
         cursor.execute('''
             UPDATE devices
@@ -69,16 +70,15 @@ def register_device():
             WHERE id = ?
         ''', (device_name, ip_address, hostname, now, device_id))
         conn.commit()
-        print(f"Device {device_id} ({device_name}) checked in.")
+        # print(f"Device {device_id} ({device_name}) checked in.")
     else:
-        # New device, insert it
         cursor.execute('''
             INSERT INTO devices (device_uid, device_name, ip_address, hostname, last_seen)
             VALUES (?, ?, ?, ?, ?)
         ''', (device_uid, device_name, ip_address, hostname, now))
         device_id = cursor.lastrowid
         conn.commit()
-        print(f"New device registered: ID {device_id} ({device_name})")
+        # print(f"New device registered: ID {device_id} ({device_name})")
 
     conn.close()
     return jsonify({'status': 'success', 'device_id': device_id}), 200 if not device else 201
@@ -88,6 +88,7 @@ def register_device():
 def receive_data():
     """Receive and store metrics from a client."""
     data = request.get_json()
+
     if not data or 'device_id' not in data or 'metrics' not in data:
         return jsonify({'error': 'device_id and metrics are required'}), 400
 
@@ -106,8 +107,8 @@ def receive_data():
         cursor.execute('''INSERT INTO stats (
                     device_id, cpu_usage, cpu_frequency, memory_used, memory_total,
                     memory_percentage, disk_used, disk_total, disk_percentage,
-                    temperature
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    temperature, uptime
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             device_id,
             metrics['cpu']['usage'],
             metrics['cpu']['frequency'],
@@ -117,17 +118,36 @@ def receive_data():
             metrics['disk']['used'],
             metrics['disk']['total'],
             metrics['disk']['percentage'],
-            metrics.get('temperature', 0.0)
+            metrics.get('temperature', 0.0),
+            metrics.get('uptime', 0.0)
         ))
-        # stats_id = cursor.lastrowid
 
-        cursor.execute('UPDATE devices SET last_seen = ? WHERE id = ?', (datetime.utcnow(), device_id))
+        stats_id = cursor.lastrowid
+
+        for iface, iface_stats in metrics['network']['interfaces'].items():
+            cursor.execute('''INSERT INTO network_stats (
+                        stats_id, interface_name, bytes_sent, bytes_recv,
+                        packets_sent, packets_recv, speed, mtu, is_up,
+                        addresses
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                stats_id,
+                iface,
+                iface_stats['bytes_sent'],
+                iface_stats['bytes_recv'],
+                iface_stats['packets_sent'],
+                iface_stats['packets_recv'],
+                iface_stats['speed'],
+                iface_stats['mtu'],
+                iface_stats['is_up'],
+                json.dumps(iface_stats.get('addresses', []))
+            ))
+
+        cursor.execute('UPDATE devices SET last_seen = ? WHERE id = ?', (datetime.now(timezone.utc), device_id))
 
         conn.commit()
     except sqlite3.Error as e:
         conn.rollback()
-        print(f"Database error: {e}")
-        return jsonify({'error': 'Database error'}), 500
+        return jsonify({'error': f'Database error: {e}'}), 500
     finally:
         conn.close()
 
@@ -190,6 +210,6 @@ if __name__ == '__main__':
     # The init_db logic is now in create_tables.py and should be run manually.
     app.run(
         host='0.0.0.0',
-        port=5000,
+        port=5001,
         debug=True
     )

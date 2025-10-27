@@ -11,7 +11,7 @@ import os
 SERVER_URL = 'http://localhost:5000'
 if not SERVER_URL.startswith('http'):
     SERVER_URL = 'http://' + SERVER_URL
-if not SERVER_URL.endswith(':5000/') or not SERVER_URL.endswith(':5000'):
+if not SERVER_URL.endswith(':5000') and not SERVER_URL.endswith(':5000/'):
     SERVER_URL = SERVER_URL.rstrip('/') + ':5000'
 
 COLLECT_INTERVAL = 10  # seconds
@@ -72,28 +72,131 @@ def get_temperature():
     return 0.0
 
 
+def get_throttle_info():
+    throttled = None
+    try:
+        out = subprocess.run(
+            ['vcgencmd', 'get_throttled'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        throttled = out.stdout.strip().split('=')[-1]
+    except Exception:
+        throttled = None
+
+    return throttled
+
+
+def get_voltage_info():
+    voltages = {}
+
+    try:
+        for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
+            try:
+                out = subprocess.run(
+                    ['vcgencmd', 'measure_volts', name],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                v = out.stdout.strip().split('=')[-1]
+                if v.endswith('V'):
+                    v = v[:-1]
+                try:
+                    voltages[name] = float(v)
+                except Exception:
+                    voltages[name] = None
+            except Exception:
+                voltages[name] = None
+    except Exception:
+        voltages = {}
+
+    return voltages
+
+def get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats):
+    active_ifaces = {}
+    for iface, stats in net_io_ifaces.items():
+        # Skip loopback and inactive interfaces
+        if (iface == 'lo' or stats.bytes_sent + stats.bytes_recv == 0 or
+                iface.startswith(('veth', 'docker', 'br-'))):
+            continue
+
+        # Get interface details
+        if_stats = net_if_stats.get(iface, None)
+        is_up = if_stats.isup if if_stats else False
+
+        if not is_up:
+            continue
+
+        # Basic stats
+        iface_info = {
+            'bytes_sent': stats.bytes_sent,
+            'bytes_recv': stats.bytes_recv,
+            'packets_sent': stats.packets_sent,
+            'packets_recv': stats.packets_recv,
+            'speed': if_stats.speed if if_stats else None,
+            'is_up': is_up,
+            'mtu': if_stats.mtu if if_stats else None,
+        }
+
+        addresses = net_if_addrs.get(iface, [])
+        ips = [addr.address for addr in addresses
+               if addr.family in {2, 10}]
+        if ips:
+            iface_info['addresses'] = ips
+
+        active_ifaces[iface] = iface_info
+    return active_ifaces
+
+
 def collect_metrics_once():
     """Collect a one-off snapshot of system metrics."""
+
     cpu_usage = psutil.cpu_percent(interval=1)
     cpu_freq = psutil.cpu_freq()
     cpu_frequency = f"{cpu_freq.current:.2f} MHz" if cpu_freq else "N/A"
+
     memory = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
+
+    net_io_total = psutil.net_io_counters()
+    net_io_ifaces = psutil.net_io_counters(pernic=True)
+    net_if_addrs = psutil.net_if_addrs()
+    net_if_stats = psutil.net_if_stats()
+    active_ifaces = get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats)
+    throttled = get_throttle_info()
+    voltages = get_voltage_info()
+    temperature = get_temperature()
+    uptime = time.time() - psutil.boot_time()
 
     metrics = {
         'cpu': {'usage': cpu_usage, 'frequency': cpu_frequency},
         'memory': {
             'total': round(memory.total / (1024**3), 2),
             'used': round(memory.used / (1024**3), 2),
+            'available': round(memory.available / (1024**3), 2),
             'percentage': memory.percent
         },
         'disk': {
             'total': round(disk.total / (1024**3), 2),
             'used': round(disk.used / (1024**3), 2),
+            'free': round(disk.free / (1024**3), 2),
             'percentage': round((disk.used / disk.total) * 100, 2)
         },
-        'temperature': get_temperature(),
-        'uptime': time.time() - psutil.boot_time()
+        'network': {
+            'total': {
+                'bytes_sent': net_io_total.bytes_sent,
+                'bytes_recv': net_io_total.bytes_recv,
+                'packets_sent': net_io_total.packets_sent,
+                'packets_recv': net_io_total.packets_recv
+            },
+            'interfaces': active_ifaces
+        },
+        'throttled': throttled,
+        'voltages': voltages,
+        'temperature': temperature,
+        'uptime': uptime
     }
     return metrics
 
@@ -121,8 +224,8 @@ def register_client():
     device_uid = get_device_uid()
     payload = {'hostname': hostname, 'device_uid': device_uid, 'device_name': hostname}
 
-    try:
-        print(f"Attempting to register with server at {SERVER_URL}...")
+    #try:
+    if True:
         response = requests.post(f"{SERVER_URL}/api/register", json=payload, timeout=10)
         response.raise_for_status()
 
@@ -132,9 +235,9 @@ def register_client():
 
         print(f"Successfully registered with device_id: {device_id}")
         return config
-    except requests.exceptions.RequestException as e:
-        print(f"Error registering with server: {e}")
-        return None
+    #except requests.exceptions.RequestException as e:
+    #    print(f"Error registering with server: {e}")
+    #    return None
 
 
 def send_data(config, metrics):

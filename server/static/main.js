@@ -10,8 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // UI Update Functions
     const updateText = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
+        const elements = document.getElementsByClassName(id);
+        for (let el of elements) {
+            if (el) el.textContent = value;
+        }
     };
 
     const updateProgressBar = (id, percentage) => {
@@ -47,27 +49,36 @@ document.addEventListener('DOMContentLoaded', () => {
         updateText('uptime', formatUptime(data.uptime));
 
         // CPU
-        const cpuUsage = parseFloat(data.cpu_usage).toFixed(1);
+        const cpuUsage = parseFloat(data.cpu_usage).toFixed(1) + ' %';
         updateText('cpu-usage', cpuUsage);
         updateProgressBar('cpu-bar', cpuUsage);
-        updateText('cpu-frequency', data.cpu_frequency || 'N/A');
+
+        let [cpuFreq, _] = data.cpu_frequency.split(' ');
+        cpuFreq = parseFloat(cpuFreq).toFixed(2);
+        let freqUnit = 'MHz';
+        if (cpuFreq >= 1024) {
+            cpuFreq = (cpuFreq / 1024).toFixed(2);
+            freqUnit = 'GHz';
+        }
+
+        updateText('cpu-frequency', cpuFreq + ' ' + freqUnit || 'N/A');
 
         // Memory
-        const memPerc = parseFloat(data.memory_percentage).toFixed(1);
+        const memPerc = parseFloat(data.memory_percentage).toFixed(1) + ' %';
         updateText('memory-usage', memPerc);
         updateProgressBar('memory-bar', memPerc);
         updateText('memory-used', data.memory_used);
         updateText('memory-total', data.memory_total);
 
         // Disk
-        const diskPerc = parseFloat(data.disk_percentage).toFixed(1);
+        const diskPerc = parseFloat(data.disk_percentage).toFixed(1) + ' %';
         updateText('disk-usage', diskPerc);
         updateProgressBar('disk-bar', diskPerc);
         updateText('disk-used', data.disk_used);
         updateText('disk-total', data.disk_total);
 
         // Temperature
-        updateText('temperature', parseFloat(data.temperature).toFixed(1));
+        updateText('temperature', parseFloat(data.temperature).toFixed(1) + ' °C');
     };
 
     const updateHistoryChart = (historyData) => {
@@ -183,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
-                option.textContent = `${device.device_name || device.hostname} (ID: ${device.id})`;
+                option.textContent = `${device.device_name || device.hostname} (ID: ${device.id} / Addr: ${device.ip_address})`;
                 deviceSelector.appendChild(option);
             });
 
