@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dataset.data = datasets[i].data;
             });
             chartInstance.update();
+            return chartInstance;
         } else {
             const ctx = document.getElementById(chartId).getContext('2d');
             return new Chart(ctx, {
@@ -182,7 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchData = async () => {
-        if (!selectedDeviceId) return;
+        if (selectedDeviceId === null || selectedDeviceId === undefined) {
+            return;
+        }
         try {
             const [latestRes, historyRes] = await Promise.all([
                 fetch(`/api/latest/${selectedDeviceId}`),
@@ -253,6 +256,20 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedDeviceId = deviceSelector.value;
         localStorage.setItem(PREFERRED_DEVICE_KEY, selectedDeviceId);
         startUpdating();
+    });
+
+    document.getElementById('toggle-details').addEventListener('click', (e) => {
+        e.preventDefault();
+        const detailsContent = document.getElementById('details-content');
+        const toggleButton = e.target;
+
+        if (detailsContent.style.display === 'none') {
+            detailsContent.style.display = 'block';
+            toggleButton.textContent = 'Hide Voltage Details';
+        } else {
+            detailsContent.style.display = 'none';
+            toggleButton.textContent = 'Show Voltage Details';
+        }
     });
 
     // Initial load

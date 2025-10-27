@@ -19,6 +19,7 @@
                 </select>
                 <span>⏱️ Uptime:</span>
                 <span class="uptime">N/A</span>
+                <span id="connection-status" class="status-indicator"></span>
             </div>
         </header>
         
@@ -145,10 +146,10 @@
                 </div>
                 <div class="stat-small" id="details-content" style="display: none;">
                     <div>Throttled: <span id="throttled">{ system_info.throttled or 'N/A' }</span></div>
-                    <div>Voltage (core): <span id="voltage-core">{ system_info.voltages.core if system_info.voltages and system_info.voltages.core else 'N/A' }</span> V</div>
-                    <div>Voltage (SDRAM_C): <span id="voltage-sdram-c">{ system_info.voltages.sdram_c if system_info.voltages and system_info.voltages.sdram_c else 'N/A' }</span> V</div>
-                    <div>Voltage (SDRAM_I): <span id="voltage-sdram-i">{ system_info.voltages.sdram_i if system_info.voltages and system_info.voltages.sdram_i else 'N/A' }</span> V</div>
-                    <div>Voltage (SDRAM_P): <span id="voltage-sdram-p">{ system_info.voltages.sdram_p if system_info.voltages and system_info.voltages.sdram_p else 'N/A' }</span> V</div>
+                    <div>Voltage (core): <span id="voltage-core">N/A</span> V</div>
+                    <div>Voltage (SDRAM_C): <span id="voltage-sdram-c">N/A</span> V</div>
+                    <div>Voltage (SDRAM_I): <span id="voltage-sdram-i">N/A</span> V</div>
+                    <div>Voltage (SDRAM_P): <span id="voltage-sdram-p">N/A</span> V</div>
                 </div>
                 <div class="chart-container small-charts">
                     <canvas id="volt-throttle-chart" style="height:160px"></canvas>
