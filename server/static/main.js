@@ -95,6 +95,50 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('voltage-sdram-i').textContent = 'N/A';
             document.getElementById('voltage-sdram-p').textContent = 'N/A';
         }
+        
+        updateNetworkStats(data.network_stats);
+    };
+
+    const updateNetworkStats = (interfaces) => {
+        const container = document.getElementById('interface-list');
+        if (!container) return;
+        container.innerHTML = ''; // Clear existing entries
+
+        if (!interfaces) {
+            container.innerHTML = '<p>No network data available.</p>';
+            return;
+        }
+
+        for (const ifaceName in interfaces) {
+            const stats = interfaces[ifaceName];
+            const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
+
+            const interfaceCardHtml = `
+                <div class="interface-card">
+                    <h3>${ifaceName}</h3>
+                    ${speed}
+                    <div class="network-stats">
+                        <div class="network-stat">
+                            <div>Sent</div>
+                            <div class="network-stat-value">${(stats.bytes_sent || 0).toLocaleString()} Bytes</div>
+                        </div>
+                        <div class="network-stat">
+                            <div>Received</div>
+                            <div class="network-stat-value">${(stats.bytes_recv || 0).toLocaleString()} Bytes</div>
+                        </div>
+                        <div class="network-stat">
+                            <div>Packets Sent</div>
+                            <div class="network-stat-value">${(stats.packets_sent || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="network-stat">
+                            <div>Packets Received</div>
+                            <div class="network-stat-value">${(stats.packets_recv || 0).toLocaleString()}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += interfaceCardHtml;
+        }
     };
 
     const createOrUpdateChart = (chartInstance, chartId, labels, datasets, options) => {

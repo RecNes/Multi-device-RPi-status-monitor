@@ -100,45 +100,11 @@
                 </div>
                 <div class="interface-list" id="interface-list">
                     <!-- Network interfaces will be populated by JavaScript -->
-                    { for iface, stats in system_info.network.interfaces.items() }
-                    <div class="interface-card">
-                        <h3>{ iface }</h3>
-                        { if stats.speed }
-                        <div class="interface-speed">{ stats.speed } Mbps</div>
-                        { endif }
-                        <div class="network-stats">
-                            <div class="network-stat">
-                                <div>Sent</div>
-                                <div class="network-stat-value" id="bytes-sent-{ iface }">
-                                    { "{:,}".format(stats.bytes_sent) } Bytes
-                                </div>
-                            </div>
-                            <div class="network-stat">
-                                <div>Received</div>
-                                <div class="network-stat-value" id="bytes-recv-{ iface }">
-                                    { "{:,}".format(stats.bytes_recv) } Bytes
-                                </div>
-                            </div>
-                            <div class="network-stat">
-                                <div>Packets Sent</div>
-                                <div class="network-stat-value" id="packets-sent-{ iface }">
-                                    { "{:,}".format(stats.packets_sent) }
-                                </div>
-                            </div>
-                            <div class="network-stat">
-                                <div>Packets Received</div>
-                                <div class="network-stat-value" id="packets-recv-{ iface }">
-                                    { "{:,}".format(stats.packets_recv) }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    { endfor }
                 </div>
             </div>
             
             <div class="card">
-                <div class="card-header uptime">
+                <div class="card-header">
                     <span>⚡ Voltages</span>
                 </div>
                 <div class="stat-value">
