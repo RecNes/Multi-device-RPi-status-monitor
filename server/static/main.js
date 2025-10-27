@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const noDevicesMessage = document.getElementById('no-devices-message');
     let selectedDeviceId = null;
     let updateInterval = null;
-    let historyChart = null;
+    let cpuChart = null;
+    let memoryChart = null;
+    let diskChart = null;
+    let tempChart = null;
+    let voltageChart = null;
 
     const PREFERRED_DEVICE_KEY = 'preferredDeviceId';
 
@@ -52,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateText('cpu-usage', cpuUsage + ' %');
         updateProgressBar('cpu-bar', cpuUsage);
 
-        let [cpuFreq, _] = data.cpu_frequency.split(' ');
+        let [cpuFreq, _] = (data.cpu_frequency || '0 0').split(' ');
         cpuFreq = parseFloat(cpuFreq).toFixed(2);
         let freqUnit = 'MHz';
         if (cpuFreq >= 1024) {
@@ -79,77 +83,102 @@ document.addEventListener('DOMContentLoaded', () => {
         updateText('temperature', parseFloat(data.temperature).toFixed(1) + ' °C');
     };
 
-    const updateHistoryChart = (historyData) => {
-        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
-        const cpuData = historyData.map(d => d.cpu_usage).reverse();
-        const memData = historyData.map(d => d.memory_percentage).reverse();
-        const tempData = historyData.map(d => d.temperature).reverse();
-
-        if (historyChart) {
-            historyChart.data.labels = labels;
-            historyChart.data.datasets[0].data = cpuData;
-            historyChart.data.datasets[1].data = memData;
-            historyChart.data.datasets[2].data = tempData;
-            historyChart.update();
+    const createOrUpdateChart = (chartInstance, chartId, labels, datasets, options) => {
+        if (chartInstance) {
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets.forEach((dataset, i) => {
+                dataset.data = datasets[i].data;
+            });
+            chartInstance.update();
         } else {
-            const ctx = document.getElementById('history-chart').getContext('2d');
-            historyChart = new Chart(ctx, {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            return new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'CPU Usage (%)',
-                            data: cpuData,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            yAxisID: 'y',
-                        },
-                        {
-                            label: 'Memory Usage (%)',
-                            data: memData,
-                            borderColor: 'rgba(255, 159, 64, 1)',
-                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                            yAxisID: 'y',
-                        },
-                        {
-                            label: 'Temperature (°C)',
-                            data: tempData,
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            yAxisID: 'y1',
-                        }
-                    ]
+                    datasets: datasets
                 },
-                options: {
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            min: 0,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Usage (%)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Temperature (°C)'
-                            },
-                            grid: {
-                                drawOnChartArea: false, 
-                            },
-                        }
-                    }
-                }
+                options: options
             });
         }
+    };
+
+    const updateCpuChart = (historyData) => {
+        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+        const cpuData = historyData.map(d => d.cpu_usage).reverse();
+        const datasets = [{
+            label: 'CPU Usage (%)',
+            data: cpuData,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        }];
+        const options = { scales: { y: { min: 0, max: 100, title: { display: true, text: 'Usage (%)' } } } };
+        cpuChart = createOrUpdateChart(cpuChart, 'cpu-chart', labels, datasets, options);
+    };
+
+    const updateMemoryChart = (historyData) => {
+        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+        const memData = historyData.map(d => d.memory_percentage).reverse();
+        const datasets = [{
+            label: 'Memory Usage (%)',
+            data: memData,
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+        }];
+        const options = { scales: { y: { min: 0, max: 100, title: { display: true, text: 'Usage (%)' } } } };
+        memoryChart = createOrUpdateChart(memoryChart, 'memory-chart', labels, datasets, options);
+    };
+
+    const updateDiskChart = (historyData) => {
+        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+        const diskData = historyData.map(d => d.disk_percentage).reverse();
+        const datasets = [{
+            label: 'Disk Usage (%)',
+            data: diskData,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+        }];
+        const options = { scales: { y: { min: 0, max: 100, title: { display: true, text: 'Usage (%)' } } } };
+        diskChart = createOrUpdateChart(diskChart, 'disk-chart', labels, datasets, options);
+    };
+
+    const updateTempChart = (historyData) => {
+        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+        const tempData = historyData.map(d => d.temperature).reverse();
+        const datasets = [{
+            label: 'Temperature (°C)',
+            data: tempData,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        }];
+        const options = { scales: { y: { title: { display: true, text: 'Temperature (°C)' } } } };
+        tempChart = createOrUpdateChart(tempChart, 'temp-chart', labels, datasets, options);
+    };
+
+    const updateVoltageChart = (historyData) => {
+        const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+        const voltageData = {
+            core: historyData.map(d => d.voltages ? d.voltages.core : null).reverse(),
+            sdram_c: historyData.map(d => d.voltages ? d.voltages.sdram_c : null).reverse(),
+            sdram_i: historyData.map(d => d.voltages ? d.voltages.sdram_i : null).reverse(),
+            sdram_p: historyData.map(d => d.voltages ? d.voltages.sdram_p : null).reverse(),
+        };
+        const datasets = [
+            { label: 'Core', data: voltageData.core, borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)' },
+            { label: 'SDRAM C', data: voltageData.sdram_c, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)' },
+            { label: 'SDRAM I', data: voltageData.sdram_i, borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)' },
+            { label: 'SDRAM P', data: voltageData.sdram_p, borderColor: 'rgba(153, 102, 255, 1)', backgroundColor: 'rgba(153, 102, 255, 0.2)' }
+        ];
+        const options = { scales: { y: { title: { display: true, text: 'Voltage (V)' } } } };
+        voltageChart = createOrUpdateChart(voltageChart, 'volt-throttle-chart', labels, datasets, options);
+    };
+
+    const updateAllCharts = (historyData) => {
+        updateCpuChart(historyData);
+        updateMemoryChart(historyData);
+        updateDiskChart(historyData);
+        updateTempChart(historyData);
+        updateVoltageChart(historyData);
     };
 
     const fetchData = async () => {
@@ -167,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const historyData = await historyRes.json();
             
             updateLatestMetrics(latestData);
-            updateHistoryChart(historyData);
+            updateAllCharts(historyData);
 
         } catch (error) {
             console.error('Error fetching data:', error);
