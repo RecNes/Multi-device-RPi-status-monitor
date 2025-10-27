@@ -81,6 +81,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Temperature
         updateText('temperature', parseFloat(data.temperature).toFixed(1) + ' °C');
+
+        // Voltages & Throttled Status
+        document.getElementById('throttled').textContent = data.throttled || 'N/A';
+        if (data.voltages) {
+            document.getElementById('voltage-core').textContent = (data.voltages.core || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-c').textContent = (data.voltages.sdram_c || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-i').textContent = (data.voltages.sdram_i || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-p').textContent = (data.voltages.sdram_p || 'N/A') + ' V';
+        } else {
+            document.getElementById('voltage-core').textContent = 'N/A';
+            document.getElementById('voltage-sdram-c').textContent = 'N/A';
+            document.getElementById('voltage-sdram-i').textContent = 'N/A';
+            document.getElementById('voltage-sdram-p').textContent = 'N/A';
+        }
     };
 
     const createOrUpdateChart = (chartInstance, chartId, labels, datasets, options) => {

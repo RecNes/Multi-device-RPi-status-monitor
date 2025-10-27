@@ -17,6 +17,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS stats (
              disk_percentage REAL,
              temperature REAL,
              uptime DATETIME,
+             voltages TEXT,
              FOREIGN KEY(device_id) REFERENCES devices(id)
              )''')
 

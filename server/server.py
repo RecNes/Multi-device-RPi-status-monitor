@@ -107,8 +107,8 @@ def receive_data():
         cursor.execute('''INSERT INTO stats (
                     device_id, cpu_usage, cpu_frequency, memory_used, memory_total,
                     memory_percentage, disk_used, disk_total, disk_percentage,
-                    temperature, uptime
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    temperature, uptime, voltages
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             device_id,
             metrics['cpu']['usage'],
             metrics['cpu']['frequency'],
@@ -119,7 +119,8 @@ def receive_data():
             metrics['disk']['total'],
             metrics['disk']['percentage'],
             metrics.get('temperature', 0.0),
-            metrics.get('uptime', 0.0)
+            metrics.get('uptime', 0.0),
+            json.dumps(metrics.get('voltages', {})),
         ))
 
         stats_id = cursor.lastrowid
