@@ -1,6 +1,7 @@
 alias.url = ( "/static/" => "/opt/rpi-monitor-server/static/" )
-server.document-root = "/opt/rpi-monitor-server/templates/"
+
 $SERVER["socket"] == ":5000" {
+    server.document-root = "/opt/rpi-monitor-server/templates/"
     $HTTP["url"] !~ "^/static/" {
         proxy.server  = ( "" => ( ( "socket" => "/tmp/rpi_monitor.sock" ) ) )
     }
