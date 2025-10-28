@@ -41,9 +41,12 @@
                         <div id="cpu-bar" class="progress-fill cpu progress-bar" role="progressbar" style="width: 0%;"></div>
                     </div>
                 </div>
-                <div class="chart-container small-charts">
-                    <canvas id="cpu-chart"></canvas>
-                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="cpu-chart"></canvas>
+                    </div>
+                </details>
             </div>
             
             <div class="card">
@@ -60,9 +63,12 @@
                         <div id="memory-bar" class="progress-fill memory progress-bar" style="width: 0%"></div>
                     </div>
                 </div>
-                <div class="chart-container small-charts">
-                    <canvas id="memory-chart"></canvas>
-                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="memory-chart"></canvas>
+                    </div>
+                </details>
             </div>
             
             <div class="card">
@@ -79,9 +85,12 @@
                         <div id="disk-bar" class="progress-fill disk progress-bar" style="width: 0%"></div>
                     </div>
                 </div>
-                <div class="chart-container small-charts">
-                    <canvas id="disk-chart"></canvas>
-                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="disk-chart"></canvas>
+                    </div>
+                </details>
             </div>
 
             <div class="card">
@@ -89,9 +98,12 @@
                     <span>🌡️ Temperature</span>
                 </div>
                 <div class="stat-value temperature">0.0 °C</div>
-                <div class="chart-container">
-                    <canvas id="temp-chart"></canvas>
-                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container">
+                        <canvas id="temp-chart"></canvas>
+                    </div>
+                </details>
             </div>
             
             <div class="card">
@@ -111,15 +123,18 @@
                     <a href="#" id="toggle-details" class="toggle-button">Show Voltage Details</a>
                 </div>
                 <div class="stat-small" id="details-content" style="display: none;">
-                    <div>Throttled: <span id="throttled">{ system_info.throttled or 'N/A' }</span></div>
-                    <div>Voltage (core): <span id="voltage-core">N/A</span> V</div>
-                    <div>Voltage (SDRAM_C): <span id="voltage-sdram-c">N/A</span> V</div>
-                    <div>Voltage (SDRAM_I): <span id="voltage-sdram-i">N/A</span> V</div>
-                    <div>Voltage (SDRAM_P): <span id="voltage-sdram-p">N/A</span> V</div>
+                    <div>System Throttled: <span id="throttled">N/A</span></div>
+                    <div>Core Voltage: <span id="voltage-core">N/A</span> V</div>
+                    <div>SDRAM-C Voltage: <span id="voltage-sdram-c">N/A</span> V</div>
+                    <div>SDRAM-I Voltage: <span id="voltage-sdram-i">N/A</span> V</div>
+                    <div>SDRAM-P Voltage: <span id="voltage-sdram-p">N/A</span> V</div>
                 </div>
-                <div class="chart-container small-charts">
-                    <canvas id="volt-throttle-chart" style="height:160px"></canvas>
-                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="volt-throttle-chart" style="height:160px"></canvas>
+                    </div>
+                </details>
             </div>
             <div id="no-devices-message" class="hidden">
                 <h2>No devices are reporting to the server.</h2>

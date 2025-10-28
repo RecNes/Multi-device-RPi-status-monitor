@@ -3,18 +3,20 @@
 This project provides a centralized web dashboard for monitoring the system metrics of multiple Raspberry Pi (or other Debian-based) devices. It uses a client-server architecture where lightweight clients send data from each monitored device to a central server, which then displays the information in a real-time web interface.
 
 # Screenshot
-*(The new interface allows selecting between multiple devices)*
-<img src="screen_shot.jpg" alt="Project Logo" />
+*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics.)*
+<img src="screen_shot.png" alt="Project Logo" />
 
 ## Features
 
-*   **Centralized Monitoring:** View the status of all your devices from a single web page.
-*   **Client-Server Model:** A robust Flask server collects data from multiple Python clients.
-*   **Real-Time Data:** Live updates for CPU, RAM, Disk usage, and Temperature for each device.
-*   **Device Dropdown:** Easily switch between monitored devices via a dropdown menu in the web UI.
-*   **Resilient Clients:** Clients cache data locally if the server is unreachable and send it once the connection is restored.
-*   **Automated Setup:** Simple installation scripts for both server and client components.
-*   **Systemd Services:** Both server and client run as background services for reliability.
+*   **Centralized Multi-Device Monitoring:** View the status of all your devices from a single web page.
+*   **Real-Time Data:** Live updates for CPU, RAM, Disk usage, Temperature, and Uptime.
+*   **Historical Data Charts:** View historical trends for all major metrics in interactive charts.
+*   **Detailed Network Statistics:** See in-depth data for each network interface, including traffic and speed.
+*   **Voltage & Throttling Status:** Monitor core voltages and system throttling status for Raspberry Pi devices.
+*   **Collapsible UI Elements:** Both network cards and metric charts are collapsible for a clean and focused view.
+*   **Device Preference:** The dashboard remembers your last selected device across sessions.
+*   **Resilient & Lightweight:** A robust Flask server collects data from multiple Python clients that run efficiently in the background.
+*   **Automated Setup:** Simple installation scripts and `systemd` services for both server and client.
 
 ## Architecture
 
@@ -64,7 +66,7 @@ Install the client on each Raspberry Pi or device you want to monitor.
     # Run the installation script (requires root privileges)
     sudo ./install_client.sh
 
-The script will prompt you to **enter the full URL of the server** (e.g., `http://192.168.1.100:5000`). It will then:
+The script will prompt you to **enter the full URL of the server** (e.g., `http://192.168.1.100:5001`). It will then:
 1.  Create an installation directory at `/opt/rpi-monitor-client`.
 2.  Configure the client with the server URL you provided.
 3.  Install the required Python dependencies.
@@ -74,9 +76,13 @@ The script will prompt you to **enter the full URL of the server** (e.g., `http:
 
 Once the server and at least one client are running, you can access the web dashboard by navigating to the server's IP address and port in your browser.
 
-**Example:** `http://<your-server-ip>:5000/`
+**Example:** `http://<your-server-ip>:5001/` (Note: The default server port is now 5001).
 
-The page will load and display a dropdown menu containing all registered devices. Select a device to view its live and historical metrics. The dashboard will remember your last selected device.
+The page will load and display a dropdown menu containing all registered devices. Select a device to view its metrics.
+
+*   **View Historical Data:** Click "View Chart" on any metric card to expand a chart showing its recent history.
+*   **Network Details:** If a device has multiple network interfaces, they will be displayed in collapsible sections. Click on any interface to see detailed stats.
+*   **Voltage Details:** On Raspberry Pi devices, you can view detailed voltage and throttling information in its own card.
 
 ## Maintenance and Management
 
@@ -87,7 +93,7 @@ You can manage the server and client applications using `systemctl`.
 | Action          | Command                                           |
 | :-------------- | :------------------------------------------------ |
 | **Check Status**| `sudo systemctl status rpi-monitor-server.service`|
-| **Restart**     | `sudo systemctl restart rpi-monitor-server.service`|
+| **Restart**     | `sudo systemctl restart r-monitor-server.service`|
 | **Stop**        | `sudo systemctl stop rpi-monitor-server.service`  |
 | **View Logs**   | `sudo journalctl -u rpi-monitor-server.service -f`|
 

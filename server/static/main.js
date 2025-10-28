@@ -102,42 +102,84 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateNetworkStats = (interfaces) => {
         const container = document.getElementById('interface-list');
         if (!container) return;
-        container.innerHTML = ''; // Clear existing entries
 
-        if (!interfaces) {
-            container.innerHTML = '<p>No network data available.</p>';
-            return;
+        const existingInterfaces = new Set();
+        container.querySelectorAll('details[data-iface-name]').forEach(el => {
+            existingInterfaces.add(el.dataset.ifaceName);
+        });
+
+        const receivedInterfaces = new Set(Object.keys(interfaces || {}));
+
+        // Remove interfaces that are no longer present
+        for (const ifaceName of existingInterfaces) {
+            if (!receivedInterfaces.has(ifaceName)) {
+                container.querySelector(`details[data-iface-name="${ifaceName}"]`).remove();
+            }
         }
 
+        if (Object.keys(interfaces || {}).length === 0) {
+            if (!container.querySelector('.no-data-message')) {
+                container.innerHTML = '<p class="no-data-message">No network data available.</p>';
+            }
+            return;
+        } else {
+            const noDataMessage = container.querySelector('.no-data-message');
+            if (noDataMessage) noDataMessage.remove();
+        }
+
+        let isFirstInterface = true;
         for (const ifaceName in interfaces) {
             const stats = interfaces[ifaceName];
-            const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
+            let details = container.querySelector(`details[data-iface-name="${ifaceName}"]`);
 
-            const interfaceCardHtml = `
-                <div class="interface-card">
-                    <h3>${ifaceName}</h3>
-                    ${speed}
-                    <div class="network-stats">
-                        <div class="network-stat">
-                            <div>Sent</div>
-                            <div class="network-stat-value">${(stats.bytes_sent || 0).toLocaleString()} Bytes</div>
+            if (!details) {
+                // Create new element if it doesn't exist
+                details = document.createElement('details');
+                details.dataset.ifaceName = ifaceName;
+                if (isFirstInterface) {
+                    details.open = true;
+                }
+
+                const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
+                details.innerHTML = `
+                    <summary class="interface-card-header">
+                        <div class="summary-content">
+                           <h3>${ifaceName}</h3>
+                           ${speed}
                         </div>
-                        <div class="network-stat">
-                            <div>Received</div>
-                            <div class="network-stat-value">${(stats.bytes_recv || 0).toLocaleString()} Bytes</div>
-                        </div>
-                        <div class="network-stat">
-                            <div>Packets Sent</div>
-                            <div class="network-stat-value">${(stats.packets_sent || 0).toLocaleString()}</div>
-                        </div>
-                        <div class="network-stat">
-                            <div>Packets Received</div>
-                            <div class="network-stat-value">${(stats.packets_recv || 0).toLocaleString()}</div>
+                    </summary>
+                    <div class="interface-card">
+                        <div class="network-stats">
+                            <div class="network-stat">
+                                <div>Sent</div>
+                                <div class="network-stat-value bytes-sent">${(stats.bytes_sent || 0).toLocaleString()} Bytes</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Received</div>
+                                <div class="network-stat-value bytes-recv">${(stats.bytes_recv || 0).toLocaleString()} Bytes</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Sent</div>
+                                <div class="network-stat-value packets-sent">${(stats.packets_sent || 0).toLocaleString()}</div>
+                            </div>
+                            <div class="network-stat">
+                                <div>Packets Received</div>
+                                <div class="network-stat-value packets-recv">${(stats.packets_recv || 0).toLocaleString()}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            container.innerHTML += interfaceCardHtml;
+                `;
+                container.appendChild(details);
+            } else {
+                // Update existing element
+                details.querySelector('.bytes-sent').textContent = `${(stats.bytes_sent || 0).toLocaleString()} Bytes`;
+                details.querySelector('.bytes-recv').textContent = `${(stats.bytes_recv || 0).toLocaleString()} Bytes`;
+                details.querySelector('.packets-sent').textContent = (stats.packets_sent || 0).toLocaleString();
+                details.querySelector('.packets-recv').textContent = (stats.packets_recv || 0).toLocaleString();
+                const speedEl = details.querySelector('.interface-speed');
+                if (speedEl) speedEl.textContent = stats.speed ? `${stats.speed} Mbps` : '';
+            }
+            isFirstInterface = false;
         }
     };
 

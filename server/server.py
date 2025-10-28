@@ -196,15 +196,29 @@ def api_latest(device_id):
             LIMIT 1
         ''', (device_id,))
         latest = c.fetchone()
-    except:
-        latest = []
+
+        if not latest:
+            return jsonify({'error': 'No data for this device'}), 404
+
+        latest_dict = dict(latest)
+
+        # Also fetch network stats for this entry
+        c.execute('''
+            SELECT interface_name, bytes_sent, bytes_recv, packets_sent, packets_recv, speed
+            FROM network_stats
+            WHERE stats_id = ?
+        ''', (latest_dict['id'],))
+        network_rows = c.fetchall()
+        network_stats = {row['interface_name']: dict(row) for row in network_rows}
+        latest_dict['network_stats'] = network_stats
+
+        return jsonify(latest_dict)
+    except sqlite3.Error:
+        # If any database error occurs, return a 500 error.
+        return jsonify({'error': 'Database error occurred'}), 500
     finally:
-        conn.close()
-
-    if not latest:
-        return jsonify({'error': 'No data for this device'}), 404
-
-    return jsonify(dict(latest))
+        if conn:
+            conn.close()
 
 
 if __name__ == '__main__':
