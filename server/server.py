@@ -225,6 +225,6 @@ if __name__ == '__main__':
     # The init_db logic is now in create_tables.py and should be run manually.
     app.run(
         host='0.0.0.0',
-        port=5001,
+        port=5000,
         debug=True
     )

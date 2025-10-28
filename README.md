@@ -66,7 +66,7 @@ Install the client on each Raspberry Pi or device you want to monitor.
     # Run the installation script (requires root privileges)
     sudo ./install_client.sh
 
-The script will prompt you to **enter the full URL of the server** (e.g., `http://192.168.1.100:5001`). It will then:
+The script will prompt you to **enter the full URL of the server** (e.g., `http://192.168.1.100:5000`). It will then:
 1.  Create an installation directory at `/opt/rpi-monitor-client`.
 2.  Configure the client with the server URL you provided.
 3.  Install the required Python dependencies.
@@ -76,7 +76,7 @@ The script will prompt you to **enter the full URL of the server** (e.g., `http:
 
 Once the server and at least one client are running, you can access the web dashboard by navigating to the server's IP address and port in your browser.
 
-**Example:** `http://<your-server-ip>:5001/` (Note: The default server port is now 5001).
+**Example:** `http://<your-server-ip>:5000/` (Note: The default server port is now 5000).
 
 The page will load and display a dropdown menu containing all registered devices. Select a device to view its metrics.
 
