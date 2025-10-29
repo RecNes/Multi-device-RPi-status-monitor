@@ -1,0 +1,13 @@
+[Unit]
+Description=RPi Monitor Client
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/rpi-monitor-client
+ExecStart=/opt/rpi-monitor-client/venv/bin/python /opt/rpi-monitor-client/client.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

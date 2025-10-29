@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Status Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Raspberry Pi Status Monitor</h1>
+            <p>Real-time system monitoring with historical data</p>
+            <div class="form-group">
+                <label for="device-selector">Select Device:</label>
+                <select class="form-control" id="device-selector">
+                    <option>Loading devices...</option>
+                </select>
+                <span>⏱️ Uptime:</span>
+                <span class="uptime">N/A</span>
+                <span id="connection-status" class="status-indicator"></span>
+            </div>
+        </header>
+        
+        <div class="dashboard hidden" id="metrics-container">
+            <div class="card">
+                <div class="card-header cpu">
+                    <span>🖥️ CPU</span>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-value cpu-usage">0 %</span> / 
+                    <span class="stat-value cpu-frequency">0 MHz</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="cpu-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar progress">
+                        <div id="cpu-bar" class="progress-fill cpu progress-bar" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="cpu-chart"></canvas>
+                    </div>
+                </details>
+            </div>
+            
+            <div class="card">
+                <div class="card-header memory">
+                    <span>💾 Memory</span>
+                </div>
+                <div class="stat-value"><span class="memory-used">0</span> GB / <span class="memory-total">0</span> GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="memory-percentage memory-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="memory-bar" class="progress-fill memory progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="memory-chart"></canvas>
+                    </div>
+                </details>
+            </div>
+            
+            <div class="card">
+                <div class="card-header disk">
+                    <span>💿 Disk</span>
+                </div>
+                <div class="stat-value"><span class="disk-used">0</span> GB / <span class="disk-total">0</span> GB</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Usage</span>
+                        <span class="disk-usage">0 %</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="disk-bar" class="progress-fill disk progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="disk-chart"></canvas>
+                    </div>
+                </details>
+            </div>
+
+            <div class="card">
+                <div class="card-header temp">
+                    <span>🌡️ Temperature</span>
+                </div>
+                <div class="stat-value temperature">0.0 °C</div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container">
+                        <canvas id="temp-chart"></canvas>
+                    </div>
+                </details>
+            </div>
+            
+            <div class="card">
+                <div class="card-header network">
+                    <span>🌐 Network</span>
+                </div>
+                <div class="interface-list" id="interface-list">
+                    <!-- Network interfaces will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <span>⚡ Voltages</span>
+                    <span id="throttled-indicator" class="status-indicator"></span>
+                </div>
+                <div class="stat-value">
+                    <a href="#" id="toggle-details" class="toggle-button">Show Voltage Details</a>
+                </div>
+                <div class="stat-small" id="details-content" style="display: none;">
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">System Throttled</span>
+                        <span class="stat-detail-value" id="throttled">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">Core Voltage</span>
+                        <span class="stat-detail-value" id="voltage-core">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-C Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-c">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-I Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-i">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-P Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-p">N/A</span>
+                    </div>
+                </div>
+                <details class="chart-details">
+                    <summary class="chart-summary">View Chart</summary>
+                    <div class="chart-container small-charts">
+                        <canvas id="volt-throttle-chart" style="height:160px"></canvas>
+                    </div>
+                </details>
+            </div>
+            <div id="no-devices-message" class="hidden">
+                <h2>No devices are reporting to the server.</h2>
+                <p>Please make sure your clients are configured and running.</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Real-time monitoring | Historical data stored in database</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

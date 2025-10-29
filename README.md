@@ -1,90 +1,107 @@
-# 🍓 Raspberry Pi Status Monitoring Page
+# 🍓 Multi-Device Raspberry Pi Status Monitor
 
-This project is a lightweight Flask-based web application that displays the basic system metrics of your Raspberry Pi device (CPU usage, RAM, disk, temperature, voltage, and throttling status) in real-time. The application is designed to run as a system service behind Nginx and Gunicorn.
+This project provides a centralized web dashboard for monitoring the system metrics of multiple Raspberry Pi (or other Debian-based) devices. It uses a client-server architecture where lightweight clients send data from each monitored device to a central server, which then displays the information in a real-time web interface.
 
 # Screenshot
-
-<img src="screen_shot.jpg" alt="Project Logo" />
+*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics.)*
+<img src="screen_shot.png" alt="Project Logo" />
 
 ## Features
 
-* **Real-Time Data:** CPU, RAM, and Disk usage percentages.
+*   **Centralized Multi-Device Monitoring:** View the status of all your devices from a single web page.
+*   **Real-Time Data:** Live updates for CPU, RAM, Disk usage, Temperature, and Uptime.
+*   **Historical Data Charts:** View historical trends for all major metrics in interactive charts.
+*   **Detailed Network Statistics:** See in-depth data for each network interface, including traffic and speed.
+*   **Voltage & Throttling Status:** Monitor core voltages and system throttling status for Raspberry Pi devices.
+*   **Collapsible UI Elements:** Both network cards and metric charts are collapsible for a clean and focused view.
+*   **Device Preference:** The dashboard remembers your last selected device across sessions.
+*   **Resilient & Lightweight:** A robust Flask server collects data from multiple Python clients that run efficiently in the background.
+*   **Automated Setup:** Simple installation scripts and `systemd` services for both server and client.
 
-* **Raspberry Pi-Specific Metrics:**
+## Architecture
 
-  * Processor Temperature (`vcgencmd measure_temp`).
+The system is split into two main components:
 
-  * Core and SDRAM Voltages.
+1.  **The Server:** A Flask application that exposes a simple REST API. It has endpoints for clients to register themselves and to submit their metrics. It stores all data in a central SQLite database and serves the web dashboard. The server can run on a Raspberry Pi or any other Debian-based machine.
+2.  **The Client:** A lightweight Python script that collects system metrics (CPU, memory, disk, etc.). It registers with the server on its first run and then periodically sends data. It's designed to run on Raspberry Pi, Banana Pi, and other similar SBCs.
 
-  * **Critical Status Check:** Checks and warns for throttling due to low voltage or overheating (`vcgencmd get_throttled`).
+## Installation
 
-* **Architecture:** Flask + Gunicorn + Nginx (Proxy Pass) + systemd.
-
-* **Easy Installation:** Automatically installs all dependencies and services with a single Bash script (`install.sh`).
-
-## Installation (Raspberry Pi OS)
-
-After downloading the project with Git, you can complete the installation with a single command.
-
-### 1. Downloading the Project
-
-
-### Create your project directory and enter it
+First, clone the repository on both your server machine and all client machines.
 
     git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
-    cd stand-alone-RPi-status-monitoring-page/
 
+---
 
-### 2. Running the Installation Script
+### 1. Server Installation
 
-The `install.sh` script will install all system dependencies (Nginx), Python dependencies (`Flask`, `psutil`, `gunicorn`), set up the application as a `systemd` service, and connect it with Nginx.
+The server can be installed on any Debian-based Linux machine (including a Raspberry Pi).
 
-**Note:** The script will use commands that require root privileges (`sudo`) during execution.
+    # Navigate to the server directory
+    cd stand-alone-RPi-status-monitoring-page/server/
 
+    # Make the installation script executable
+    chmod +x install_server.sh
 
-    chmod +x install.sh
-    ./install.sh
+    # Run the installation script (requires root privileges)
+    sudo ./install_server.sh
 
+This script will:
+1.  Create an installation directory at `/opt/rpi-monitor-server`.
+2.  Install the required Python dependencies.
+3.  Create, enable, and start a `systemd` service named `rpi-monitor-server.service`.
 
-### What Does the Script Do?
+---
 
-1. **System Check:** Checks if `python3`, `python3-venv`, and `nginx` packages are installed and installs any missing ones.
+### 2. Client Installation
 
-2. **Virtual Environment:** Creates a virtual environment named `venv` inside your project folder.
+Install the client on each Raspberry Pi or device you want to monitor.
 
-3. **Dependencies:** Installs the libraries from the `requirements.txt` file (Flask, psutil, gunicorn) into this environment.
+    # Navigate to the client directory
+    cd stand-alone-RPi-status-monitoring-page/client/
 
-4. **Nginx Configuration:** Copies the `rpi_monitor.nginx` file from the project's root directory to `/etc/nginx/sites-available/` and enables it.
+    # Make the installation script executable
+    chmod +x install_client.sh
 
-5. **Systemd Service:** Creates the `/etc/systemd/system/rpi_monitor.service` file to start the application with Gunicorn, enables the service, and starts it immediately.
+    # Run the installation script (requires root privileges)
+    sudo ./install_client.sh
 
+The script will prompt you to **enter the full URL of the server** (e.g., `http://192.168.1.100:5000`). It will then:
+1.  Create an installation directory at `/opt/rpi-monitor-client`.
+2.  Configure the client with the server URL you provided.
+3.  Install the required Python dependencies.
+4.  Create, enable, and start a `systemd` service named `rpi-monitor-client.service`.
 
 ## Usage
 
-After the installation is complete, you can access the application by typing the IP address of your Raspberry Pi into your web browser.
+Once the server and at least one client are running, you can access the web dashboard by navigating to the server's IP address and port in your browser.
 
+**Example:** `http://<your-server-ip>:5000/` (Note: The default server port is now 5000).
 
-**Example:** `http://[Your Raspberry Pi's IP Address]:5000/`
+The page will load and display a dropdown menu containing all registered devices. Select a device to view its metrics.
 
+*   **View Historical Data:** Click "View Chart" on any metric card to expand a chart showing its recent history.
+*   **Network Details:** If a device has multiple network interfaces, they will be displayed in collapsible sections. Click on any interface to see detailed stats.
+*   **Voltage Details:** On Raspberry Pi devices, you can view detailed voltage and throttling information in its own card.
 
 ## Maintenance and Management
 
-Since your application runs as a `systemd` service, management is simple:
+You can manage the server and client applications using `systemctl`.
 
-| Action | Command | Description |
-| :--- | :--- | :--- |
-| **Check Status** | `sudo systemctl status rpi_monitor.service` | Shows if the service is running, recent logs, and errors. |
-| **Restart** | `sudo systemctl restart rpi_monitor.service` | Restarts the service when you make a change in the code. |
-| **Stop** | `sudo systemctl stop rpi_monitor.service` | Stops the service. |
-| **Disable Auto-Start** | `sudo systemctl disable rpi_monitor.service` | Prevents the service from starting automatically when the device reboots. |
+#### Server Management
 
+| Action          | Command                                           |
+| :-------------- | :------------------------------------------------ |
+| **Check Status**| `sudo systemctl status rpi-monitor-server.service`|
+| **Restart**     | `sudo systemctl restart r-monitor-server.service`|
+| **Stop**        | `sudo systemctl stop rpi-monitor-server.service`  |
+| **View Logs**   | `sudo journalctl -u rpi-monitor-server.service -f`|
 
-## Project Files
+#### Client Management
 
-| File Name | Description |
-| :--- | :--- |
-| `app.py` | The main Python code for the Flask application. Collects system metrics. |
-| `templates/index.html` | The interface template for the application. Displays the data in an organized way. |
-| `requirements.txt` | Lists the Python dependencies (`Flask`, `psutil`, `gunicorn`). |
-| `install.sh` | The Bash script that automates the entire system setup. |
-| `rpi_monitor.nginx` | The proxy configuration for Nginx. Forwards requests to the Gunicorn socket. |
+| Action          | Command                                           |
+| :-------------- | :------------------------------------------------ |
+| **Check Status**| `sudo systemctl status rpi-monitor-client.service`|
+| **Restart**     | `sudo systemctl restart rpi-monitor-client.service`|
+| **Stop**        | `sudo systemctl stop rpi-monitor-client.service`  |
+| **View Logs**   | `sudo journalctl -u rpi-monitor-client.service -f`|
