@@ -281,14 +281,37 @@ footer {
     text-decoration: underline;
 }
 
+/* Updated styles for voltage/throttled details */
 .stat-small {
-    font-size: 0.9rem;
-    color: #555;
-    text-align: center;
     margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Space between items */
+}
+
+.stat-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 10px;
-    background: #f9f9f9;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
     border-radius: 5px;
+    font-size: 0.95rem;
+}
+
+.stat-detail-label {
+    color: #555;
+    font-weight: 500;
+}
+
+.stat-detail-value {
+    color: #333;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #e9ecef;
+    padding: 3px 6px;
+    border-radius: 4px;
 }
 
 .stat-row {

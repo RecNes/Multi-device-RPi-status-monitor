@@ -8,21 +8,24 @@ and serves a web interface to view the data.
 import json
 import os
 import sqlite3
-from datetime import datetime, timezone
+import threading
+import time
+from datetime import datetime, timezone, timedelta
 
 from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'system_stats.db')
-# Retention in days for historical records. Default 30 (about 1 month).
-# Can be overridden by setting environment variable RETENTION_DAYS.
-RETENTION_DAYS = int(os.environ.get('RETENTION_DAYS', '30'))
 
+# --- Database Cleanup Configuration ---
+STATS_RETENTION_DAYS = 30
+INACTIVE_DEVICE_DAYS = 7
+# ------------------------------------
 
 def get_db_conn():
     """Get a database connection."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -70,7 +73,6 @@ def register_device():
             WHERE id = ?
         ''', (device_name, ip_address, hostname, now, device_id))
         conn.commit()
-        # print(f"Device {device_id} ({device_name}) checked in.")
     else:
         cursor.execute('''
             INSERT INTO devices (device_uid, device_name, ip_address, hostname, last_seen)
@@ -78,7 +80,6 @@ def register_device():
         ''', (device_uid, device_name, ip_address, hostname, now))
         device_id = cursor.lastrowid
         conn.commit()
-        # print(f"New device registered: ID {device_id} ({device_name})")
 
     conn.close()
     return jsonify({'status': 'success', 'device_id': device_id}), 200 if not device else 201
@@ -107,8 +108,8 @@ def receive_data():
         cursor.execute('''INSERT INTO stats (
                     device_id, cpu_usage, cpu_frequency, memory_used, memory_total,
                     memory_percentage, disk_used, disk_total, disk_percentage,
-                    temperature, uptime, voltages
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    temperature, uptime, throttled, voltages
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             device_id,
             metrics['cpu']['usage'],
             metrics['cpu']['frequency'],
@@ -120,6 +121,7 @@ def receive_data():
             metrics['disk']['percentage'],
             metrics.get('temperature', 0.0),
             metrics.get('uptime', 0.0),
+            metrics.get('throttled'),
             json.dumps(metrics.get('voltages', {})),
         ))
 
@@ -220,11 +222,84 @@ def api_latest(device_id):
         if conn:
             conn.close()
 
+# --- Database Cleanup Functions ---
+
+def prune_old_stats(conn):
+    """Delete stats and related network_stats older than STATS_RETENTION_DAYS."""
+    try:
+        c = conn.cursor()
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=STATS_RETENTION_DAYS)
+        
+        app.logger.info(f"Pruning records older than {STATS_RETENTION_DAYS} days (before {cutoff_date.strftime('%Y-%m-%d')})...")
+
+        c.execute("DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE timestamp < ?)", (cutoff_date,))
+        deleted_net_stats = c.rowcount
+        
+        c.execute("DELETE FROM stats WHERE timestamp < ?", (cutoff_date,))
+        deleted_stats = c.rowcount
+
+        conn.commit()
+        app.logger.info(f"Pruned {deleted_stats} records from 'stats' and {deleted_net_stats} records from 'network_stats'.")
+
+    except sqlite3.Error as e:
+        app.logger.error(f"An error occurred while pruning old stats: {e}")
+        conn.rollback()
+
+def prune_inactive_devices(conn):
+    """Delete devices and all their data if they haven't been seen in INACTIVE_DEVICE_DAYS."""
+    try:
+        c = conn.cursor()
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=INACTIVE_DEVICE_DAYS)
+
+        app.logger.info(f"Pruning devices inactive for {INACTIVE_DEVICE_DAYS} days (last seen before {cutoff_date.strftime('%Y-%m-%d %H:%M:%S')} UTC)...")
+
+        c.execute("SELECT id, device_name FROM devices WHERE last_seen < ?", (cutoff_date,))
+        inactive_devices = c.fetchall()
+
+        if not inactive_devices:
+            app.logger.info("No inactive devices found to prune.")
+            return
+
+        inactive_ids = [row['id'] for row in inactive_devices]
+        placeholders = ','.join('?' for _ in inactive_ids)
+
+        c.execute(f"DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE device_id IN ({placeholders}))", inactive_ids)
+        c.execute(f"DELETE FROM stats WHERE device_id IN ({placeholders})", inactive_ids)
+        c.execute(f"DELETE FROM devices WHERE id IN ({placeholders})", inactive_ids)
+        
+        conn.commit()
+        app.logger.info(f"Successfully pruned {len(inactive_ids)} inactive device(s).")
+
+    except sqlite3.Error as e:
+        app.logger.error(f"An error occurred while pruning inactive devices: {e}")
+        conn.rollback()
+
+def cleanup_loop():
+    """Endless loop that runs cleanup tasks periodically."""
+    while True:
+        app.logger.info("DB cleanup thread waking up.")
+        conn = get_db_conn()
+        if conn:
+            try:
+                prune_old_stats(conn)
+                prune_inactive_devices(conn)
+            finally:
+                conn.close()
+        
+        # Sleep for 24 hours
+        time.sleep(24 * 60 * 60)
+
+def start_cleanup_thread():
+    """Start the background cleanup thread."""
+    cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
+    cleanup_thread.start()
+    print("Started background DB cleanup thread.")
 
 if __name__ == '__main__':
     # The init_db logic is now in create_tables.py and should be run manually.
+    start_cleanup_thread()
     app.run(
         host='0.0.0.0',
-        port=5000,
+        port=5001,
         debug=True
     )

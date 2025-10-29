@@ -84,6 +84,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Voltages & Throttled Status
         document.getElementById('throttled').textContent = data.throttled || 'N/A';
+        const throttledIndicator = document.getElementById('throttled-indicator');
+        if (throttledIndicator) {
+            throttledIndicator.classList.remove('status-ok', 'status-problem', 'status-unknown');
+            // Use `== null` to check for both undefined and null
+            if (data.throttled == null) {
+                throttledIndicator.classList.add('status-unknown');
+            } else if (data.throttled.trim() === '0x0') {
+                throttledIndicator.classList.add('status-ok');
+            } else {
+                throttledIndicator.classList.add('status-problem');
+            }
+        }
+
         if (data.voltages) {
             document.getElementById('voltage-core').textContent = (data.voltages.core || 'N/A') + ' V';
             document.getElementById('voltage-sdram-c').textContent = (data.voltages.sdram_c || 'N/A') + ' V';
@@ -143,10 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
                 details.innerHTML = `
                     <summary class="interface-card-header">
-                        <div class="summary-content">
-                           <h3>${ifaceName}</h3>
+                        <span class="summary-content">
+                           <span class="stat-small">${ifaceName}</span>
                            ${speed}
-                        </div>
+                        </span>
                     </summary>
                     <div class="interface-card">
                         <div class="network-stats">
@@ -374,4 +387,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadDevices();
+
+    // --- Collapsible Chart State Persistence ---
+    const loadChartStates = () => {
+        document.querySelectorAll('.chart-details').forEach(details => {
+            const canvas = details.querySelector('canvas');
+            if (canvas && canvas.id) {
+                const savedState = localStorage.getItem(`chart-state-${canvas.id}`);
+                if (savedState !== null) {
+                    details.open = (savedState === 'true');
+                }
+            }
+        });
+    };
+
+    // Add event listeners to save state on change.
+    // This is more efficient as it only saves the state for the toggled element.
+    document.querySelectorAll('.chart-details').forEach(details => {
+        details.addEventListener('toggle', (event) => {
+            const chartDetails = event.currentTarget;
+            const canvas = chartDetails.querySelector('canvas');
+            if (canvas && canvas.id) {
+                localStorage.setItem(`chart-state-${canvas.id}`, chartDetails.open);
+            }
+        });
+    });
+
+    // Load initial states when the page is ready
+    loadChartStates();
 });

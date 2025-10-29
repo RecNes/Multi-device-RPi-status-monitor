@@ -118,16 +118,32 @@
             <div class="card">
                 <div class="card-header">
                     <span>⚡ Voltages</span>
+                    <span id="throttled-indicator" class="status-indicator"></span>
                 </div>
                 <div class="stat-value">
                     <a href="#" id="toggle-details" class="toggle-button">Show Voltage Details</a>
                 </div>
                 <div class="stat-small" id="details-content" style="display: none;">
-                    <div>System Throttled: <span id="throttled">N/A</span></div>
-                    <div>Core Voltage: <span id="voltage-core">N/A</span> V</div>
-                    <div>SDRAM-C Voltage: <span id="voltage-sdram-c">N/A</span> V</div>
-                    <div>SDRAM-I Voltage: <span id="voltage-sdram-i">N/A</span> V</div>
-                    <div>SDRAM-P Voltage: <span id="voltage-sdram-p">N/A</span> V</div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">System Throttled</span>
+                        <span class="stat-detail-value" id="throttled">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">Core Voltage</span>
+                        <span class="stat-detail-value" id="voltage-core">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-C Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-c">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-I Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-i">N/A</span>
+                    </div>
+                    <div class="stat-detail-item">
+                        <span class="stat-detail-label">SDRAM-P Voltage</span>
+                        <span class="stat-detail-value" id="voltage-sdram-p">N/A</span>
+                    </div>
                 </div>
                 <details class="chart-details">
                     <summary class="chart-summary">View Chart</summary>
