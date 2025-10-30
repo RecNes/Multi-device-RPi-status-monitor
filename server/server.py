@@ -43,7 +43,7 @@ def get_db_conn():
 @app.route('/')
 def index():
     """Render the main dashboard page."""
-    return render_template('index.html')
+    return render_template('index.html', server_version=SERVER_VERSION)
 
 
 @app.route('/api/version', methods=['GET'])
@@ -309,7 +309,7 @@ def cleanup_loop():
                 prune_inactive_devices(conn)
             finally:
                 conn.close()
-        
+
         # Sleep for 24 hours
         time.sleep(24 * 60 * 60)
 
