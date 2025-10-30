@@ -18,6 +18,15 @@ COLLECT_INTERVAL = 10  # seconds
 CLIENT_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'client_config.json')
 LOCAL_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local_cache.db')
 
+# --- Version ---
+try:
+    with open(CLIENT_CONFIG_FILE, 'r') as f:
+        config = json.load(f)
+        CLIENT_VERSION = config.get('version', '0.0.0')
+except FileNotFoundError:
+    CLIENT_VERSION = '0.0.0'
+# ------------------------------------
+
 
 def get_device_uid():
     """Generate a unique device ID from the MAC address."""
@@ -218,10 +227,11 @@ def register_client():
     hostname = get_hostname()
     device_uid = get_device_uid()
     payload = {'hostname': hostname, 'device_uid': device_uid, 'device_name': hostname}
+    headers = {'X-Client-Version': CLIENT_VERSION}
 
     #try:
     if True:
-        response = requests.post(f"{SERVER_URL}/api/register", json=payload, timeout=10)
+        response = requests.post(f"{SERVER_URL}/api/register", json=payload, headers=headers, timeout=10)
         response.raise_for_status()
 
         device_id = response.json().get('device_id')
@@ -241,8 +251,9 @@ def send_data(config, metrics):
         'device_id': config['device_id'],
         'metrics': metrics
     }
+    headers = {'X-Client-Version': CLIENT_VERSION}
     try:
-        response = requests.post(f"{config['server_url']}/api/data", json=payload, timeout=10)
+        response = requests.post(f"{config['server_url']}/api/data", json=payload, headers=headers, timeout=10)
         response.raise_for_status()
         return True
     except requests.exceptions.RequestException as e:
