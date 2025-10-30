@@ -387,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadDevices();
+    fetchVersion();
 
     // --- Collapsible Chart State Persistence ---
     const loadChartStates = () => {
@@ -399,6 +400,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+    };
+
+    const fetchVersion = async () => {
+        try {
+            const response = await fetch('/api/version');
+            const data = await response.json();
+            document.getElementById('server-version').textContent = data.version;
+        } catch (error) {
+            console.error('Failed to load version:', error);
+            document.getElementById('server-version').textContent = 'Error';
+        }
     };
 
     // Add event listeners to save state on change.

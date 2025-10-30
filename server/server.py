@@ -17,6 +17,16 @@ from flask import Flask, render_template, jsonify, request
 app = Flask(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'system_stats.db')
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_config.json')
+
+# --- Version ---
+try:
+    with open(CONFIG_PATH, 'r') as f:
+        config = json.load(f)
+        SERVER_VERSION = config.get('version', '0.0.0')
+except FileNotFoundError:
+    SERVER_VERSION = '0.0.0'
+# ------------------------------------
 
 # --- Database Cleanup Configuration ---
 STATS_RETENTION_DAYS = 30
@@ -36,12 +46,17 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/api/version', methods=['GET'])
+def get_version():
+    """Return the server version."""
+    return jsonify({'version': SERVER_VERSION})
+
+
 @app.route('/api/devices', methods=['GET'])
 def get_devices():
     """Return a list of all registered devices."""
     conn = get_db_conn()
     devices = conn.execute('SELECT * FROM devices ORDER BY last_seen DESC').fetchall()
-    conn.close()
     devices_list = [dict(row) for row in devices]
     return jsonify(devices_list)
 
@@ -49,6 +64,14 @@ def get_devices():
 @app.route('/api/register', methods=['POST'])
 def register_device():
     """Register a new device or update an existing one."""
+    client_version = request.headers.get('X-Client-Version')
+    if not client_version or client_version != SERVER_VERSION:
+        return jsonify({
+            'error': 'Client version mismatch',
+            'client_version': client_version,
+            'server_version': SERVER_VERSION
+        }), 426
+
     data = request.get_json()
     if not data or 'device_uid' not in data:
         return jsonify({'error': 'device_uid is required'}), 400
@@ -81,13 +104,20 @@ def register_device():
         device_id = cursor.lastrowid
         conn.commit()
 
-    conn.close()
     return jsonify({'status': 'success', 'device_id': device_id}), 200 if not device else 201
 
 
 @app.route('/api/data', methods=['POST'])
 def receive_data():
     """Receive and store metrics from a client."""
+    client_version = request.headers.get('X-Client-Version')
+    if not client_version or client_version != SERVER_VERSION:
+        return jsonify({
+            'error': 'Client version mismatch',
+            'client_version': client_version,
+            'server_version': SERVER_VERSION
+        }), 426
+
     data = request.get_json()
 
     if not data or 'device_id' not in data or 'metrics' not in data:
@@ -151,8 +181,7 @@ def receive_data():
     except sqlite3.Error as e:
         conn.rollback()
         return jsonify({'error': f'Database error: {e}'}), 500
-    finally:
-        conn.close()
+
 
     return jsonify({'status': 'success'}), 201
 
@@ -175,8 +204,6 @@ def api_history(device_id):
         rows = c.fetchall()
     except:
         rows = []
-    finally:
-        conn.close()
 
     history = [dict(row) for row in rows]
     return jsonify(history)
@@ -218,9 +245,6 @@ def api_latest(device_id):
     except sqlite3.Error:
         # If any database error occurs, return a 500 error.
         return jsonify({'error': 'Database error occurred'}), 500
-    finally:
-        if conn:
-            conn.close()
 
 # --- Database Cleanup Functions ---
 
@@ -300,6 +324,7 @@ if __name__ == '__main__':
     start_cleanup_thread()
     app.run(
         host='0.0.0.0',
-        port=5001,
-        debug=True
+        port=5000,
+        debug=False,
+        threaded=True
     )
