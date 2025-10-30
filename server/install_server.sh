@@ -13,16 +13,14 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 INSTALL_DIR="/opt/rpi-monitor-server"
 SERVICE_NAME="rpi-monitor-server.service"
 SERVICE_FILE_PATH="/etc/systemd/system/$SERVICE_NAME"
-REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
+REQUIREMENTS_FILE="$INSTALL_DIR/requirements.txt"
 PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
 echo "Creating installation directory at $INSTALL_DIR..."
 mkdir -p $INSTALL_DIR
 
 echo "Copying application files..."
-cp -r "$SCRIPT_DIR"/*.py "$INSTALL_DIR/"
-cp -r "$SCRIPT_DIR"/static "$INSTALL_DIR/"
-cp -r "$SCRIPT_DIR"/templates "$INSTALL_DIR/"
+cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -31,7 +29,7 @@ command_exists() {
 if command_exists apt-get; then
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
         echo "python3-venv not found. Attempting to install..."
-        apt-get update && apt-get install -y python3-venv
+        apt-get update && apt-get install -y python3-venv gcc python3-dev
     fi
 elif command_exists yum; then
     if ! rpm -q python3-virtualenv >/dev/null 2>&1; then
@@ -109,7 +107,7 @@ echo "Using $WEBSERVER as the web server."
 
 if [ "$WEBSERVER" = "lighttpd" ]; then
     echo "Configuring lighttpd..."
-    LIGHTTPD_CONFIG_SRC="$SCRIPT_DIR/rpi_monitor.lighttpd"
+    LIGHTTPD_CONFIG_SRC="$INSTALL_DIR/rpi_monitor.lighttpd"
     LIGHTTPD_CONFIG_DEST="/etc/lighttpd/conf-available/10-rpi_monitor.conf"
     
     cp "$LIGHTTPD_CONFIG_SRC" "$LIGHTTPD_CONFIG_DEST"
@@ -121,7 +119,7 @@ if [ "$WEBSERVER" = "lighttpd" ]; then
 else
     echo "Configuring Nginx..."
 
-    NGINX_CONFIG_SRC="$SCRIPT_DIR/rpi_monitor.nginx"
+    NGINX_CONFIG_SRC="$INSTALL_DIR/rpi_monitor.nginx"
     NGINX_CONFIG_DEST="/etc/nginx/sites-available/rpi_monitor"
     NGINX_SYMLINK="/etc/nginx/sites-enabled/rpi_monitor"
 
