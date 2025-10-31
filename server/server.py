@@ -43,7 +43,10 @@ def get_db_conn():
 @app.route('/')
 def index():
     """Render the main dashboard page."""
-    return render_template('index.html', server_version=SERVER_VERSION)
+    app_info = {
+        'server_version': SERVER_VERSION
+    }
+    return render_template('index.html', app_info=app_info)
 
 
 @app.route('/api/version', methods=['GET'])
