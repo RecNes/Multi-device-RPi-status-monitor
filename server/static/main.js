@@ -155,12 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
                 details.innerHTML = `
-                    <summary class="interface-card-header">
-                        <span class="summary-content">
-                           <span class="stat-small">${ifaceName}</span>
-                           ${speed}
-                        </span>
-                    </summary>
+                    <summary class="interface-card-header"></summary>
+                    <span class="stat-small">${ifaceName}</span>
+                    <span class="summary-content">${speed}</span>
                     <div class="interface-card">
                         <div class="network-stats">
                             <div class="network-stat">
@@ -387,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadDevices();
-    fetchVersion();
 
     // --- Collapsible Chart State Persistence ---
     const loadChartStates = () => {
@@ -402,27 +398,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const fetchVersion = async () => {
-        try {
-            const response = await fetch('/api/version');
-            const data = await response.json();
-            document.getElementById('server-version').textContent = data.version;
-        } catch (error) {
-            console.error('Failed to load version:', error);
-            document.getElementById('server-version').textContent = 'Error';
-        }
-    };
-
     // Add event listeners to save state on change.
     // This is more efficient as it only saves the state for the toggled element.
-    document.querySelectorAll('.chart-details').forEach(details => {
-        details.addEventListener('toggle', (event) => {
-            const chartDetails = event.currentTarget;
-            const canvas = chartDetails.querySelector('canvas');
-            if (canvas && canvas.id) {
-                localStorage.setItem(`chart-state-${canvas.id}`, chartDetails.open);
-            }
-        });
+    metricsContainer.addEventListener('click', (event) => {
+        const summary = event.target.closest('summary');
+        if (summary && summary.parentElement.classList.contains('chart-details')) {
+            const details = summary.parentElement;
+            const canvas = details.querySelector('canvas');
+            // State is toggled after the click, so use a timeout to get the new state
+            setTimeout(() => {
+                if (canvas && canvas.id) {
+                    localStorage.setItem(`chart-state-${canvas.id}`, details.open);
+                }
+            }, 0);
+        }
     });
 
     // Load initial states when the page is ready
