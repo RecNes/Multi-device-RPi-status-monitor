@@ -8,7 +8,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 echo "Starting RPi Monitor Server installation..."
-
+echo " "
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 INSTALL_DIR="/opt/rpi-monitor-server"
 SERVICE_NAME="rpi-monitor-server.service"
@@ -25,26 +25,34 @@ cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
-
+echo " "
 if command_exists apt-get; then
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
         echo "python3-venv not found. Attempting to install..."
+        echo " "
         apt-get update && apt-get install -y python3-venv gcc python3-dev
     fi
 elif command_exists yum; then
     if ! rpm -q python3-virtualenv >/dev/null 2>&1; then
         echo "python3-virtualenv not found. Attempting to install..."
+        echo " "
         yum install -y python3-virtualenv
     fi
 fi
 
-echo "Creating Python virtual environment..."
-python3 -m venv "$INSTALL_DIR/venv"
+if [ ! -d "$INSTALL_DIR/venv" ]; then
+    echo "Attempting to create a Python virtual environment..."
+    echo " "
+    python3 -m venv "$INSTALL_DIR/venv"
+fi
 
 if [ ! -f "$INSTALL_DIR/venv/bin/python" ]; then
     echo "Error: Python virtual environment creation failed."
-    echo "Please ensure 'python3-venv' is installed and try again."
+    echo "Please ensure 'python3-venv' is installed and try"
+    echo "this command: python3 -m venv '$INSTALL_DIR/venv'"
     exit 1
+else
+    echo "Python virtual environment is already set."
 fi
 
 echo "Installing Python dependencies and Gunicorn..."
@@ -70,6 +78,7 @@ fi
 
 if [ -z "$WEBSERVER" ]; then
     echo "No web server found. Attempting to install lighttpd..."
+    echo " "
     if command_exists apt-get; then
         apt-get update && apt-get install -y lighttpd
         if command_exists lighttpd; then
@@ -84,6 +93,7 @@ if [ -z "$WEBSERVER" ]; then
 
     if [ -z "$WEBSERVER" ]; then
         echo "lighttpd installation failed or not supported. Attempting to install nginx..."
+        echo " "
         if command_exists apt-get; then
             apt-get update && apt-get install -y nginx
             if command_exists nginx; then
@@ -106,7 +116,9 @@ fi
 echo "Using $WEBSERVER as the web server."
 
 if [ "$WEBSERVER" = "lighttpd" ]; then
+    echo " "
     echo "Configuring lighttpd..."
+    echo " "
     LIGHTTPD_CONFIG_SRC="$INSTALL_DIR/rpi_monitor.lighttpd"
     LIGHTTPD_CONFIG_DEST="/etc/lighttpd/conf-available/10-rpi_monitor.conf"
     
@@ -117,7 +129,9 @@ if [ "$WEBSERVER" = "lighttpd" ]; then
     
     systemctl restart lighttpd
 else
+    echo " "
     echo "Configuring Nginx..."
+    echo " "
 
     NGINX_CONFIG_SRC="$INSTALL_DIR/rpi_monitor.nginx"
     NGINX_CONFIG_DEST="/etc/nginx/sites-available/rpi_monitor"
@@ -139,7 +153,9 @@ else
     systemctl restart nginx
 fi
 
+echo " "
 echo "Creating systemd service file for Gunicorn..."
+echo " "
 
 SERVICE_CONTENT="[Unit]
 Description=Gunicorn instance to serve RPi Monitor
@@ -163,6 +179,7 @@ systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
 systemctl start "$SERVICE_NAME"
 
+echo " "
 echo "-------------------------------------------------"
 echo "Installation complete."
 echo "The server is now running."
