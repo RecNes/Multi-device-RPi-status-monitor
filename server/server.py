@@ -19,7 +19,7 @@ app = Flask(__name__)
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_PATH, 'server_config.json')
 try:
-    with open(CONFIG_PATH, 'r') as f:
+    with open(CONFIG_PATH, 'r', encoding="UTF-8") as f:
         config = json.load(f)
         SERVER_VERSION = config.get('version', '0.0.0')
 except FileNotFoundError:
@@ -56,7 +56,9 @@ def get_version():
 def get_devices():
     """Return a list of all registered devices."""
     conn = get_db_conn()
-    devices = conn.execute('SELECT * FROM devices ORDER BY last_seen DESC').fetchall()
+    devices = conn.execute(
+        'SELECT * FROM devices ORDER BY last_seen DESC'
+    ).fetchall()
     devices_list = [dict(row) for row in devices]
     return jsonify(devices_list)
 
@@ -85,7 +87,9 @@ def register_device():
     conn = get_db_conn()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT id FROM devices WHERE device_uid = ?', (device_uid,))
+    cursor.execute(
+        'SELECT id FROM devices WHERE device_uid = ?', (device_uid,)
+    )
     device = cursor.fetchone()
 
     if device:
@@ -98,13 +102,15 @@ def register_device():
         conn.commit()
     else:
         cursor.execute('''
-            INSERT INTO devices (device_uid, device_name, ip_address, hostname, last_seen)
+            INSERT INTO devices
+            (device_uid, device_name, ip_address, hostname, last_seen)
             VALUES (?, ?, ?, ?, ?)
         ''', (device_uid, device_name, ip_address, hostname, now))
         device_id = cursor.lastrowid
         conn.commit()
 
-    return jsonify({'status': 'success', 'device_id': device_id}), 200 if not device else 201
+    response = jsonify({'status': 'success', 'device_id': device_id})
+    return response, 200 if not device else 201
 
 
 @app.route('/api/data', methods=['POST'])
@@ -136,9 +142,9 @@ def receive_data():
             return jsonify({'error': 'Device not registered'}), 404
 
         cursor.execute('''INSERT INTO stats (
-                    device_id, cpu_usage, cpu_frequency, memory_used, memory_total,
-                    memory_percentage, disk_used, disk_total, disk_percentage,
-                    temperature, uptime, throttled, voltages
+                    device_id, cpu_usage, cpu_frequency, memory_used,
+                    memory_total, memory_percentage, disk_used, disk_total,
+                    disk_percentage, temperature, uptime, throttled, voltages
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             device_id,
             metrics['cpu']['usage'],
@@ -175,7 +181,10 @@ def receive_data():
                 json.dumps(iface_stats.get('addresses', []))
             ))
 
-        cursor.execute('UPDATE devices SET last_seen = ? WHERE id = ?', (datetime.now(timezone.utc), device_id))
+        cursor.execute(
+            'UPDATE devices SET last_seen = ? WHERE id = ?',
+            (datetime.now(timezone.utc), device_id)
+        )
 
         conn.commit()
     except sqlite3.Error as e:
@@ -232,12 +241,19 @@ def api_latest(device_id):
 
         # Also fetch network stats for this entry
         c.execute('''
-            SELECT interface_name, bytes_sent, bytes_recv, packets_sent, packets_recv, speed
+            SELECT interface_name,
+                   bytes_sent,
+                   bytes_recv,
+                   packets_sent,
+                   packets_recv,
+                   speed
             FROM network_stats
             WHERE stats_id = ?
         ''', (latest_dict['id'],))
         network_rows = c.fetchall()
-        network_stats = {row['interface_name']: dict(row) for row in network_rows}
+        network_stats = {
+            row['interface_name']: dict(row) for row in network_rows
+        }
         latest_dict['network_stats'] = network_stats
 
         return jsonify(latest_dict)
@@ -247,21 +263,34 @@ def api_latest(device_id):
 
 
 def prune_old_stats(conn):
-    """Delete stats and related network_stats older than STATS_RETENTION_DAYS."""
+    """
+    Delete stats and related network_stats older than STATS_RETENTION_DAYS.
+    """
     try:
         c = conn.cursor()
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=STATS_RETENTION_DAYS)
+        cutoff_date = (
+            datetime.now(timezone.utc) - timedelta(days=STATS_RETENTION_DAYS)
+        )
 
-        app.logger.info(f"Pruning records older than {STATS_RETENTION_DAYS} days (before {cutoff_date.strftime('%Y-%m-%d')})...")
+        app.logger.info(
+            f"""Pruning records older than {STATS_RETENTION_DAYS} days
+             (before {cutoff_date.strftime('%Y-%m-%d')})..."""
+        )
 
-        c.execute("DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE timestamp < ?)", (cutoff_date,))
+        c.execute(
+            """DELETE FROM network_stats 
+             WHERE stats_id IN (SELECT id FROM stats 
+                                WHERE timestamp < ?)""",
+            (cutoff_date,)
+        )
         deleted_net_stats = c.rowcount
 
         c.execute("DELETE FROM stats WHERE timestamp < ?", (cutoff_date,))
         deleted_stats = c.rowcount
 
         conn.commit()
-        app.logger.info(f"Pruned {deleted_stats} records from 'stats' and {deleted_net_stats} records from 'network_stats'.")
+        app.logger.info(f"""Pruned {deleted_stats} records from 'stats' and
+                        {deleted_net_stats} records from 'network_stats'.""")
 
     except sqlite3.Error as e:
         app.logger.error(f"An error occurred while pruning old stats: {e}")
@@ -269,14 +298,22 @@ def prune_old_stats(conn):
 
 
 def prune_inactive_devices(conn):
-    """Delete devices and all their data if they haven't been seen in INACTIVE_DEVICE_DAYS."""
+    """Delete devices and all their data if they haven't been seen in
+    INACTIVE_DEVICE_DAYS."""
     try:
         c = conn.cursor()
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=INACTIVE_DEVICE_DAYS)
+        cutoff_date = (
+            datetime.now(timezone.utc) - timedelta(days=INACTIVE_DEVICE_DAYS)
+        )
 
-        app.logger.info(f"Pruning devices inactive for {INACTIVE_DEVICE_DAYS} days (last seen before {cutoff_date.strftime('%Y-%m-%d %H:%M:%S')} UTC)...")
+        app.logger.info(f"""Pruning devices inactive for {INACTIVE_DEVICE_DAYS}
+        days (last seen before {cutoff_date.strftime('%Y-%m-%d %H:%M:%S')}
+        UTC)...""")
 
-        c.execute("SELECT id, device_name FROM devices WHERE last_seen < ?", (cutoff_date,))
+        c.execute("""SELECT id, device_name
+                     FROM devices
+                     WHERE last_seen < ?""",
+                  (cutoff_date,))
         inactive_devices = c.fetchall()
 
         if not inactive_devices:
@@ -286,15 +323,30 @@ def prune_inactive_devices(conn):
         inactive_ids = [row['id'] for row in inactive_devices]
         placeholders = ','.join('?' for _ in inactive_ids)
 
-        c.execute(f"DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE device_id IN ({placeholders}))", inactive_ids)
-        c.execute(f"DELETE FROM stats WHERE device_id IN ({placeholders})", inactive_ids)
-        c.execute(f"DELETE FROM devices WHERE id IN ({placeholders})", inactive_ids)
+        c.execute(
+            f"""DELETE FROM network_stats
+                WHERE stats_id IN (SELECT id
+                                   FROM stats
+                                   WHERE device_id IN ({placeholders}))""",
+            inactive_ids
+        )
+        c.execute(
+            f"DELETE FROM stats WHERE device_id IN ({placeholders})",
+            inactive_ids
+        )
+        c.execute(
+            f"DELETE FROM devices WHERE id IN ({placeholders})", inactive_ids
+        )
 
         conn.commit()
-        app.logger.info(f"Successfully pruned {len(inactive_ids)} inactive device(s).")
+        app.logger.info(
+            f"Successfully pruned {len(inactive_ids)} inactive device(s)."
+        )
 
     except sqlite3.Error as e:
-        app.logger.error(f"An error occurred while pruning inactive devices: {e}")
+        app.logger.error(
+            f"An error occurred while pruning inactive devices: {e}"
+        )
         conn.rollback()
 
 
