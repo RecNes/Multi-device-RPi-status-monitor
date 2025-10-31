@@ -211,7 +211,10 @@ def load_config():
         return None
     try:
         with open(CLIENT_CONFIG_FILE, 'r') as f:
-            return json.load(f)
+            config = json.load(f)
+            if "device_id" not in config or "server_url" not in config:
+                return None
+            return config
     except (IOError, json.JSONDecodeError):
         return None
 
