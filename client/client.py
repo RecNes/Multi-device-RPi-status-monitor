@@ -1,11 +1,12 @@
-import requests
-import time
-import sqlite3
-import subprocess
-import psutil
-import uuid
 import json
 import os
+import psutil
+import requests
+import socket
+import sqlite3
+import subprocess
+import time
+import uuid
 
 # This will be configured during installation
 SERVER_URL = 'http://localhost:5000'
@@ -21,9 +22,10 @@ LOCAL_DB_PATH = os.path.join(BASE_PATH, 'local_cache.db')
 
 
 def read_client_config():
+    """Read client configuration from file."""
     config = {}
     try:
-        with open(CLIENT_CONFIG_FILE, 'r') as f:
+        with open(CLIENT_CONFIG_FILE, 'r', encoding="UTF-8") as f:
             config = json.load(f)
     except FileNotFoundError:
         pass
@@ -36,7 +38,9 @@ CLIENT_VERSION = config_data.get('version', '0.0.0')
 
 def get_device_uid():
     """Generate a unique device ID from the MAC address."""
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0,8*6,8)][::-1])
+    mac = ':'.join(
+        [f"{(uuid.getnode() >> i) & 0xff:02x}" for i in range(0, 8*6, 8)][::-1]
+    )
     return mac
 
 
@@ -45,7 +49,6 @@ def get_hostname():
     try:
         return subprocess.check_output(['hostname']).decode('utf-8').strip()
     except Exception:
-        import socket
         return socket.gethostname()
 
 
@@ -65,16 +68,22 @@ def init_local_db():
 def get_temperature():
     """Get CPU temperature (tries vcgencmd then psutil sensors)."""
     if os.path.exists("/proc/device-tree/model"):
-        with open("/proc/device-tree/model", "r") as f:
+        with open("/proc/device-tree/model", "r", encoding="UTF-8") as f:
             model = f.read().lower()
-            if "banana" in model and os.path.exists('/sys/class/thermal/thermal_zone0/temp'):
-                with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
+            if all(("banana" in model,
+                    os.path.exists('/sys/class/thermal/thermal_zone0/temp'))):
+                with open(
+                    '/sys/class/thermal/thermal_zone0/temp', 'r',
+                    encoding="UTF-8"
+                ) as f:
                     temp_str = f.read().strip()
                     return float(temp_str) / 1000.0
 
     try:
         cmd = ['vcgencmd', 'measure_temp']
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=True
+        )
         temp_str = result.stdout.strip()
         temp = float(temp_str.replace('temp=', '').replace("'C", ''))
         return temp
@@ -85,12 +94,13 @@ def get_temperature():
             temps = psutil.sensors_temperatures()
             if "coretemp" in temps:
                 for entry in temps["coretemp"]:
-                    if max_temp <= entry.current:
-                        max_temp = entry.current
+                    max_temp = max(max_temp, entry.current)
+
         return max_temp
 
 
 def get_throttle_info():
+    """Get throttled status using vcgencmd."""
     throttled = None
     try:
         out = subprocess.run(
@@ -107,6 +117,7 @@ def get_throttle_info():
 
 
 def get_voltage_info():
+    """Get voltage information using vcgencmd or sysfs for Banana Pi."""
     voltages = {}
 
     if os.path.exists("/proc/device-tree/model"):
@@ -115,14 +126,18 @@ def get_voltage_info():
             power_info_path = "/sys/devices/platform/soc/1c2ac00.i2c/i2c-1/1-0034/ac"
             if "banana" in model and os.path.exists(power_info_path):
                 try:
-                    with open(f'{power_info_path}/amperage', 'r') as f:
+                    with open(
+                        f'{power_info_path}/amperage', 'r', encoding="UTF-8"
+                    ) as f:
                         temp_str = f.read().strip()
                         current_amps = float(temp_str) / 1000.0
                         voltages["sdram_c"] = current_amps
                 except Exception:
                     pass
                 try:
-                    with open(f'{power_info_path}/voltage', 'r') as f:
+                    with open(
+                        f'{power_info_path}/voltage', 'r', encoding="UTF-8"
+                    ) as f:
                         temp_str = f.read().strip()
                         current_volt = float(temp_str) / 1000000.0
                         voltages["core"] = current_volt
@@ -153,6 +168,7 @@ def get_voltage_info():
 
 
 def get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats):
+    """Get active network interfaces with stats."""
     active_ifaces = {}
     for iface, stats in net_io_ifaces.items():
         # Skip loopback and inactive interfaces
@@ -202,7 +218,9 @@ def collect_metrics_once():
     net_io_ifaces = psutil.net_io_counters(pernic=True)
     net_if_addrs = psutil.net_if_addrs()
     net_if_stats = psutil.net_if_stats()
-    active_ifaces = get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats)
+    active_ifaces = get_active_ifaces(
+        net_io_ifaces, net_if_addrs, net_if_stats
+    )
     throttled = get_throttle_info()
     voltages = get_voltage_info()
     temperature = get_temperature()
@@ -244,7 +262,7 @@ def load_config():
     if not os.path.exists(CLIENT_CONFIG_FILE):
         return None
     try:
-        with open(CLIENT_CONFIG_FILE, 'r') as f:
+        with open(CLIENT_CONFIG_FILE, 'r', encoding="UTF-8") as f:
             config = json.load(f)
             if "device_id" not in config or "server_url" not in config:
                 return None
@@ -255,7 +273,7 @@ def load_config():
 
 def save_config(config):
     """Save client configuration to file."""
-    with open(CLIENT_CONFIG_FILE, 'w') as f:
+    with open(CLIENT_CONFIG_FILE, 'w', encoding="UTF-8") as f:
         json.dump(config, f, indent=4)
 
 
@@ -263,15 +281,26 @@ def register_client():
     """Register this client with the server and save the config."""
     hostname = get_hostname()
     device_uid = get_device_uid()
-    payload = {'hostname': hostname, 'device_uid': device_uid, 'device_name': hostname}
+    payload = {
+        'hostname': hostname,
+        'device_uid': device_uid,
+        'device_name': hostname
+    }
     headers = {'X-Client-Version': CLIENT_VERSION}
 
     try:
-        response = requests.post(f"{SERVER_URL}/api/register", json=payload, headers=headers, timeout=10)
+        response = requests.post(
+            f"{SERVER_URL}/api/register", json=payload,
+            headers=headers, timeout=10
+        )
         response.raise_for_status()
 
         device_id = response.json().get('device_id')
-        config_data.update({'device_id': device_id, 'server_url': SERVER_URL, 'device_uid': device_uid})
+        config_data.update({
+            'device_id': device_id,
+            'server_url': SERVER_URL,
+            'device_uid': device_uid
+        })
         save_config(config_data)
 
         print(f"Successfully registered with device_id: {device_id}")
@@ -289,7 +318,10 @@ def send_data(config, metrics):
     }
     headers = {'X-Client-Version': CLIENT_VERSION}
     try:
-        response = requests.post(f"{config['server_url']}/api/data", json=payload, headers=headers, timeout=10)
+        response = requests.post(
+            f"{config['server_url']}/api/data", json=payload,
+            headers=headers, timeout=10
+        )
         response.raise_for_status()
         return True
     except requests.exceptions.RequestException as e:
@@ -301,7 +333,10 @@ def cache_data(metrics):
     """Save metrics to the local cache."""
     conn = sqlite3.connect(LOCAL_DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO metrics_cache (metrics_json) VALUES (?)", (json.dumps(metrics),))
+    c.execute(
+        "INSERT INTO metrics_cache (metrics_json) VALUES (?)",
+        (json.dumps(metrics),)
+    )
     conn.commit()
     conn.close()
     print("Data cached locally.")

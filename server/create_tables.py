@@ -1,7 +1,10 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'system_stats.db')
+DB_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'system_stats.db'
+)
 
 def create_tables(conn=None):
     """
@@ -62,10 +65,11 @@ def create_tables(conn=None):
                  )''')
 
     conn.commit()
-    
+
     if should_close:
         conn.close()
         print("Created/verified tables in system_stats.db")
+
 
 if __name__ == '__main__':
     create_tables()
