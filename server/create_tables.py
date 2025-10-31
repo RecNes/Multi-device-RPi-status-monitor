@@ -1,3 +1,4 @@
+"""Script to create the necessary database tables for system stats monitoring."""
 import sqlite3
 import os
 
@@ -5,6 +6,7 @@ DB_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     'system_stats.db'
 )
+
 
 def create_tables(conn=None):
     """
@@ -15,7 +17,7 @@ def create_tables(conn=None):
     if conn is None:
         conn = sqlite3.connect(DB_PATH)
         should_close = True
-    
+
     c = conn.cursor()
 
     # Devices table

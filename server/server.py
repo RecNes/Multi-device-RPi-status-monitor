@@ -19,7 +19,7 @@ app = Flask(__name__)
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_PATH, 'server_config.json')
 try:
-    with open(CONFIG_PATH, 'r') as f:
+    with open(CONFIG_PATH, 'r', encoding="UTF-8") as f:
         config = json.load(f)
         SERVER_VERSION = config.get('version', '0.0.0')
 except FileNotFoundError:
@@ -310,8 +310,8 @@ def prune_inactive_devices(conn):
         days (last seen before {cutoff_date.strftime('%Y-%m-%d %H:%M:%S')}
         UTC)...""")
 
-        c.execute("""SELECT id, device_name 
-                     FROM devices 
+        c.execute("""SELECT id, device_name
+                     FROM devices
                      WHERE last_seen < ?""",
                   (cutoff_date,))
         inactive_devices = c.fetchall()
@@ -324,9 +324,9 @@ def prune_inactive_devices(conn):
         placeholders = ','.join('?' for _ in inactive_ids)
 
         c.execute(
-            f"""DELETE FROM network_stats 
-                WHERE stats_id IN (SELECT id 
-                                   FROM stats 
+            f"""DELETE FROM network_stats
+                WHERE stats_id IN (SELECT id
+                                   FROM stats
                                    WHERE device_id IN ({placeholders}))""",
             inactive_ids
         )

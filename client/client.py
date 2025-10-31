@@ -1,12 +1,15 @@
+"""Client code for Raspberry Pi status monitoring."""
 import json
 import os
-import psutil
-import requests
 import socket
 import sqlite3
 import subprocess
 import time
 import uuid
+
+import psutil
+import requests
+
 
 # This will be configured during installation
 SERVER_URL = 'http://localhost:5000'
@@ -121,7 +124,7 @@ def get_voltage_info():
     voltages = {}
 
     if os.path.exists("/proc/device-tree/model"):
-        with open("/proc/device-tree/model", "r") as f:
+        with open("/proc/device-tree/model", "r", encoding="UTF-8") as f:
             model = f.read().lower()
             power_info_path = "/sys/devices/platform/soc/1c2ac00.i2c/i2c-1/1-0034/ac"
             if "banana" in model and os.path.exists(power_info_path):
@@ -371,6 +374,7 @@ def send_cached_data(config):
 
 
 def main():
+    """Main loop for the client."""
     init_local_db()
     config = load_config()
 
@@ -378,7 +382,10 @@ def main():
         print("No configuration found. Attempting to register new client...")
         config = register_client()
         if not config:
-            print("Registration failed. Please check server URL and connectivity. Exiting.")
+            print("""
+            Registration failed. Please check server URL and connectivity.
+            Exiting.
+            """)
             return
 
     while True:

@@ -1,3 +1,5 @@
+"""Script to check the contents of the system_stats.db database."""
+
 import sqlite3
 conn = sqlite3.connect('system_stats.db')
 c = conn.cursor()
