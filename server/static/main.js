@@ -388,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial load
     loadDevices();
     fetchVersion();
+    loadChartStates();
 
     // --- Collapsible Chart State Persistence ---
     const loadChartStates = () => {
