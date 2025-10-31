@@ -58,6 +58,14 @@ def init_local_db():
 
 def get_temperature():
     """Get CPU temperature (tries vcgencmd then psutil sensors)."""
+    if os.path.exists("/proc/device-tree/model"):
+        with open("/proc/device-tree/model", "r") as f:
+            model = f.read().lower()
+            if "banana" in model and os.path.exists('/sys/class/thermal/thermal_zone0/temp'):
+                with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
+                    temp_str = f.read().strip()
+                    return float(temp_str) / 1000.0
+        return 0.0
     try:
         cmd = ['vcgencmd', 'measure_temp']
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
