@@ -273,8 +273,8 @@ def prune_old_stats(conn):
         )
 
         app.logger.info(
-            """Pruning records older than {STATS_RETENTION_DAYS} days
-             (before %s)...""" % cutoff_date.strftime('%Y-%m-%d')
+            f"""Pruning records older than {STATS_RETENTION_DAYS} days
+             (before {cutoff_date.strftime('%Y-%m-%d')})..."""
         )
 
         c.execute(
@@ -289,15 +289,11 @@ def prune_old_stats(conn):
         deleted_stats = c.rowcount
 
         conn.commit()
-        app.logger.info(
-            """Pruned %s records from 'stats' and
-               %s records from 'network_stats'.""" % (
-                   deleted_stats, deleted_net_stats
-                )
-            )
+        app.logger.info(f"""Pruned {deleted_stats} records from 'stats' and
+                        {deleted_net_stats} records from 'network_stats'.""")
 
     except sqlite3.Error as e:
-        app.logger.error("An error occurred while pruning old stats: %s" % e)
+        app.logger.error(f"An error occurred while pruning old stats: {e}")
         conn.rollback()
 
 
@@ -310,13 +306,9 @@ def prune_inactive_devices(conn):
             datetime.now(timezone.utc) - timedelta(days=INACTIVE_DEVICE_DAYS)
         )
 
-        app.logger.info(
-            """Pruning devices inactive for %s days
-            (last seen before %s UTC)...""" % (
-                INACTIVE_DEVICE_DAYS,
-                cutoff_date.strftime('%Y-%m-%d %H:%M:%S')
-            )
-        )
+        app.logger.info(f"""Pruning devices inactive for {INACTIVE_DEVICE_DAYS}
+        days (last seen before {cutoff_date.strftime('%Y-%m-%d %H:%M:%S')}
+        UTC)...""")
 
         c.execute("""SELECT id, device_name
                      FROM devices
@@ -348,14 +340,12 @@ def prune_inactive_devices(conn):
 
         conn.commit()
         app.logger.info(
-            "Successfully pruned %s inactive device(s)." % str(
-                len(inactive_ids)
-            )
+            f"Successfully pruned {len(inactive_ids)} inactive device(s)."
         )
 
     except sqlite3.Error as e:
         app.logger.error(
-            "An error occurred while pruning inactive devices: %s" % e
+            f"An error occurred while pruning inactive devices: {e}"
         )
         conn.rollback()
 
