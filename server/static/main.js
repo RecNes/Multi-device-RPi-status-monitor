@@ -97,11 +97,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (data.voltages) {
-            document.getElementById('voltage-core').textContent = (data.voltages.core || 'N/A') + ' V';
-            document.getElementById('voltage-sdram-c').textContent = (data.voltages.sdram_c || 'N/A') + ' V';
-            document.getElementById('voltage-sdram-i').textContent = (data.voltages.sdram_i || 'N/A') + ' V';
-            document.getElementById('voltage-sdram-p').textContent = (data.voltages.sdram_p || 'N/A') + ' V';
+        let voltages = null;
+        if (typeof data.voltages === 'string') {
+            try {
+                voltages = JSON.parse(data.voltages);
+            } catch (e) {
+                console.error('Error parsing voltages JSON:', e);
+            }
+        } else if (typeof data.voltages === 'object' && data.voltages !== null) {
+            voltages = data.voltages;
+        }
+
+        if (voltages) {
+            document.getElementById('voltage-core').textContent = (voltages.core || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-c').textContent = (voltages.sdram_c || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-i').textContent = (voltages.sdram_i || 'N/A') + ' V';
+            document.getElementById('voltage-sdram-p').textContent = (voltages.sdram_p || 'N/A') + ' V';
         } else {
             document.getElementById('voltage-core').textContent = 'N/A';
             document.getElementById('voltage-sdram-c').textContent = 'N/A';
@@ -269,11 +280,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateVoltageChart = (historyData) => {
         const labels = historyData.map(d => new Date(d.timestamp + 'Z').toLocaleTimeString()).reverse();
+
+        const getVoltageProperty = (data, property) => {
+            if (!data.voltages) return null;
+            let voltageObj = data.voltages;
+            if (typeof voltageObj === 'string') {
+                try {
+                    voltageObj = JSON.parse(voltageObj);
+                } catch (e) {
+                    console.error(`Error parsing voltage string: ${voltageObj}`, e);
+                    return null;
+                }
+            }
+            return voltageObj ? voltageObj[property] : null;
+        };
+
         const voltageData = {
-            core: historyData.map(d => d.voltages ? d.voltages.core : null).reverse(),
-            sdram_c: historyData.map(d => d.voltages ? d.voltages.sdram_c : null).reverse(),
-            sdram_i: historyData.map(d => d.voltages ? d.voltages.sdram_i : null).reverse(),
-            sdram_p: historyData.map(d => d.voltages ? d.voltages.sdram_p : null).reverse(),
+            core: historyData.map(d => getVoltageProperty(d, 'core')).reverse(),
+            sdram_c: historyData.map(d => getVoltageProperty(d, 'sdram_c')).reverse(),
+            sdram_i: historyData.map(d => getVoltageProperty(d, 'sdram_i')).reverse(),
+            sdram_p: historyData.map(d => getVoltageProperty(d, 'sdram_p')).reverse(),
         };
         const datasets = [
             { label: 'Core', data: voltageData.core, borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)' },
