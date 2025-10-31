@@ -15,17 +15,23 @@ if not SERVER_URL.endswith(':5000') and not SERVER_URL.endswith(':5000/'):
     SERVER_URL = SERVER_URL.rstrip('/') + ':5000'
 
 COLLECT_INTERVAL = 10  # seconds
-CLIENT_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'client_config.json')
-LOCAL_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local_cache.db')
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+CLIENT_CONFIG_FILE = os.path.join(BASE_PATH, 'client_config.json')
+LOCAL_DB_PATH = os.path.join(BASE_PATH, 'local_cache.db')
 
-# --- Version ---
-try:
-    with open(CLIENT_CONFIG_FILE, 'r') as f:
-        config = json.load(f)
-        CLIENT_VERSION = config.get('version', '0.0.0')
-except FileNotFoundError:
-    CLIENT_VERSION = '0.0.0'
-# ------------------------------------
+
+def read_client_config():
+    config = {}
+    try:
+        with open(CLIENT_CONFIG_FILE, 'r') as f:
+            config = json.load(f)
+    except FileNotFoundError:
+        pass
+    return config
+
+
+config_data = read_client_config()
+CLIENT_VERSION = config_data.get('version', '0.0.0')
 
 
 def get_device_uid():
@@ -260,20 +266,19 @@ def register_client():
     payload = {'hostname': hostname, 'device_uid': device_uid, 'device_name': hostname}
     headers = {'X-Client-Version': CLIENT_VERSION}
 
-    #try:
-    if True:
+    try:
         response = requests.post(f"{SERVER_URL}/api/register", json=payload, headers=headers, timeout=10)
         response.raise_for_status()
 
         device_id = response.json().get('device_id')
-        config = {'device_id': device_id, 'server_url': SERVER_URL, 'device_uid': device_uid}
-        save_config(config)
+        config_data.update({'device_id': device_id, 'server_url': SERVER_URL, 'device_uid': device_uid})
+        save_config(config_data)
 
         print(f"Successfully registered with device_id: {device_id}")
-        return config
-    #except requests.exceptions.RequestException as e:
-    #    print(f"Error registering with server: {e}")
-    #    return None
+        return config_data
+    except requests.exceptions.RequestException as e:
+        print(f"Error registering with server: {e}")
+        return None
 
 
 def send_data(config, metrics):

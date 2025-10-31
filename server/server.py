@@ -16,22 +16,19 @@ from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'system_stats.db')
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_config.json')
-
-# --- Version ---
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_PATH, 'server_config.json')
 try:
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
         SERVER_VERSION = config.get('version', '0.0.0')
 except FileNotFoundError:
     SERVER_VERSION = '0.0.0'
-# ------------------------------------
 
-# --- Database Cleanup Configuration ---
+DB_PATH = os.path.join(BASE_PATH, 'system_stats.db')
 STATS_RETENTION_DAYS = 30
 INACTIVE_DEVICE_DAYS = 7
-# ------------------------------------
+
 
 def get_db_conn():
     """Get a database connection."""
@@ -185,7 +182,6 @@ def receive_data():
         conn.rollback()
         return jsonify({'error': f'Database error: {e}'}), 500
 
-
     return jsonify({'status': 'success'}), 201
 
 
@@ -197,8 +193,8 @@ def api_history(device_id):
 
     try:
         c.execute('''
-            SELECT timestamp, cpu_usage, memory_percentage,
-                   disk_percentage, temperature
+            SELECT timestamp, cpu_usage, cpu_frequency, memory_percentage,
+                   disk_percentage, temperature, voltages, uptime
             FROM stats
             WHERE device_id = ?
             ORDER BY timestamp DESC
@@ -249,19 +245,18 @@ def api_latest(device_id):
         # If any database error occurs, return a 500 error.
         return jsonify({'error': 'Database error occurred'}), 500
 
-# --- Database Cleanup Functions ---
 
 def prune_old_stats(conn):
     """Delete stats and related network_stats older than STATS_RETENTION_DAYS."""
     try:
         c = conn.cursor()
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=STATS_RETENTION_DAYS)
-        
+
         app.logger.info(f"Pruning records older than {STATS_RETENTION_DAYS} days (before {cutoff_date.strftime('%Y-%m-%d')})...")
 
         c.execute("DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE timestamp < ?)", (cutoff_date,))
         deleted_net_stats = c.rowcount
-        
+
         c.execute("DELETE FROM stats WHERE timestamp < ?", (cutoff_date,))
         deleted_stats = c.rowcount
 
@@ -271,6 +266,7 @@ def prune_old_stats(conn):
     except sqlite3.Error as e:
         app.logger.error(f"An error occurred while pruning old stats: {e}")
         conn.rollback()
+
 
 def prune_inactive_devices(conn):
     """Delete devices and all their data if they haven't been seen in INACTIVE_DEVICE_DAYS."""
@@ -293,13 +289,14 @@ def prune_inactive_devices(conn):
         c.execute(f"DELETE FROM network_stats WHERE stats_id IN (SELECT id FROM stats WHERE device_id IN ({placeholders}))", inactive_ids)
         c.execute(f"DELETE FROM stats WHERE device_id IN ({placeholders})", inactive_ids)
         c.execute(f"DELETE FROM devices WHERE id IN ({placeholders})", inactive_ids)
-        
+
         conn.commit()
         app.logger.info(f"Successfully pruned {len(inactive_ids)} inactive device(s).")
 
     except sqlite3.Error as e:
         app.logger.error(f"An error occurred while pruning inactive devices: {e}")
         conn.rollback()
+
 
 def cleanup_loop():
     """Endless loop that runs cleanup tasks periodically."""
@@ -316,11 +313,13 @@ def cleanup_loop():
         # Sleep for 24 hours
         time.sleep(24 * 60 * 60)
 
+
 def start_cleanup_thread():
     """Start the background cleanup thread."""
     cleanup_thread = threading.Thread(target=cleanup_loop, daemon=True)
     cleanup_thread.start()
     print("Started background DB cleanup thread.")
+
 
 if __name__ == '__main__':
     # The init_db logic is now in create_tables.py and should be run manually.
