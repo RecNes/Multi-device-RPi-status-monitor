@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     details.open = true;
                 }
 
-                const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
+                const speed = stats.speed ? `${stats.speed} Mbps` : 'N/A';
                 details.innerHTML = `
                     <summary class="chart-summary">
                         <span class="interface-name">${ifaceName}</span>
