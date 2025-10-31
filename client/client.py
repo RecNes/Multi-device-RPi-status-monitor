@@ -118,7 +118,7 @@ def get_voltage_info():
                 try:
                     with open(f'{power_info_path}/voltage', 'r') as f:
                         temp_str = f.read().strip()
-                        current_volt = float(temp_str) / 1000.0
+                        current_volt = float(temp_str) / 1000000.0
                         voltages["core"] = current_volt
                 except Exception:
                     pass
@@ -143,7 +143,6 @@ def get_voltage_info():
                     voltages[name] = None
         except Exception:
             voltages = {}
-
     return voltages
 
 
