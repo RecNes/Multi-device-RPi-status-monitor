@@ -155,9 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const speed = stats.speed ? `<div class="interface-speed">${stats.speed} Mbps</div>` : '';
                 details.innerHTML = `
-                    <summary class="interface-card-header"></summary>
-                    <span class="stat-small">${ifaceName}</span>
-                    <span class="summary-content">${speed}</span>
+                    <summary class="chart-summary">
+                        <span class="interface-name">${ifaceName}</span>
+                        <span class="interface-speed">${speed}</span>
+                    </summary>
                     <div class="interface-card">
                         <div class="network-stats">
                             <div class="network-stat">

@@ -164,7 +164,7 @@ header p {
     color: #2c3e50;
 }
 
-.interface-speed {
+.interface-speed .interface-name{
     margin-bottom: 10px;
     font-size: 0.9rem;
     color: #666;
