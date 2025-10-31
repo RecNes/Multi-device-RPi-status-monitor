@@ -65,7 +65,7 @@ def get_temperature():
                 with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
                     temp_str = f.read().strip()
                     return float(temp_str) / 1000.0
-        return 0.0
+
     try:
         cmd = ['vcgencmd', 'measure_temp']
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -103,28 +103,49 @@ def get_throttle_info():
 def get_voltage_info():
     voltages = {}
 
-    try:
-        for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
-            try:
-                out = subprocess.run(
-                    ['vcgencmd', 'measure_volts', name],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                v = out.stdout.strip().split('=')[-1]
-                if v.endswith('V'):
-                    v = v[:-1]
+    if os.path.exists("/proc/device-tree/model"):
+        with open("/proc/device-tree/model", "r") as f:
+            model = f.read().lower()
+            power_info_path = "/sys/devices/platform/soc/1c2ac00.i2c/i2c-1/1-0034/ac"
+            if "banana" in model and os.path.exists(power_info_path):
                 try:
-                    voltages[name] = float(v)
+                    with open(f'{power_info_path}/amperage', 'r') as f:
+                        temp_str = f.read().strip()
+                        current_amps = float(temp_str) / 1000.0
+                        voltages["sdram_c"] = current_amps
+                except Exception:
+                    pass
+                try:
+                    with open(f'{power_info_path}/voltage', 'r') as f:
+                        temp_str = f.read().strip()
+                        current_volt = float(temp_str) / 1000.0
+                        voltages["core"] = current_volt
+                except Exception:
+                    pass
+    else:
+        try:
+            for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
+                try:
+                    out = subprocess.run(
+                        ['vcgencmd', 'measure_volts', name],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    v = out.stdout.strip().split('=')[-1]
+                    if v.endswith('V'):
+                        v = v[:-1]
+                    try:
+                        voltages[name] = float(v)
+                    except Exception:
+                        voltages[name] = None
                 except Exception:
                     voltages[name] = None
-            except Exception:
-                voltages[name] = None
-    except Exception:
-        voltages = {}
+        except Exception:
+            voltages = {}
 
     return voltages
+
 
 def get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats):
     active_ifaces = {}
