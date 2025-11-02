@@ -35,7 +35,7 @@ else
     echo "Updating application files..."
 fi
 
-CONFIG_FILE_NAME="server_config.json"
+CONFIG_FILE_NAME="client_config.json"
 rsync -av --exclude="$CONFIG_FILE_NAME" "$SCRIPT_DIR/" "$INSTALL_DIR/"
 
 echo "Checking client configuration..."
