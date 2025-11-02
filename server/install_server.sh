@@ -16,11 +16,37 @@ SERVICE_FILE_PATH="/etc/systemd/system/$SERVICE_NAME"
 REQUIREMENTS_FILE="$INSTALL_DIR/requirements.txt"
 PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
-echo "Creating installation directory at $INSTALL_DIR..."
-mkdir -p $INSTALL_DIR
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "Creating installation directory at $INSTALL_DIR..."
+    mkdir -p "$INSTALL_DIR"
+    echo "Copying application files..."
+else
+    echo "Installation directory $INSTALL_DIR already exists."
+    echo "Updating application files..."
+fi
 
-echo "Copying application files..."
-cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
+CONFIG_FILE_NAME="server_config.json"
+rsync -av --exclude="$CONFIG_FILE_NAME" "$SCRIPT_DIR/" "$INSTALL_DIR/"
+
+echo "Checking server configuration..."
+SRC_CONFIG="$SCRIPT_DIR/$CONFIG_FILE_NAME"
+DEST_CONFIG="$INSTALL_DIR/$CONFIG_FILE_NAME"
+
+if [ ! -f "$DEST_CONFIG" ]; then
+    echo "Configuration file not found in $INSTALL_DIR, copying..."
+    cp "$SRC_CONFIG" "$DEST_CONFIG"
+else
+    echo "Configuration file found. Updating version..."
+    # Extract version from source and update in destination
+    VERSION=$(grep -o '"version": "[^"]*"' "$SRC_CONFIG" | cut -d'"' -f4)
+    if [ -n "$VERSION" ]; then
+        sed -i 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' "$DEST_CONFIG"
+        echo "Version updated to $VERSION."
+    else
+        echo "Could not determine version from source config."
+        exit 1
+    fi
+fi
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
