@@ -16,28 +16,31 @@ spec.loader.exec_module(client)
 
 class MockSQLiteConnection:
     """Mock SQLite connection that prevents actual closing in tests."""
-    
+
     def __init__(self, in_memory_conn):
         self._real_conn = in_memory_conn
         self._closed = False
         self.row_factory = None
-    
+
     def cursor(self):
+        """Return a mock cursor that respects the row factory."""
         if self._closed:
             raise sqlite3.ProgrammingError("Cannot operate on a closed database.")
         return MockSQLiteCursor(self._real_conn.cursor(), self.row_factory)
-    
+
     def commit(self):
+        """Commit changes to the database."""
         if self._closed:
             raise sqlite3.ProgrammingError("Cannot operate on a closed database.")
         return self._real_conn.commit()
-    
+
     def close(self):
+        """Mock close method that does not actually close the connection."""
         # Don't actually close the connection, just mark it as closed
         self._closed = True
         # Print statement to show the mock is working
         print("Mock close called (connection not actually closed)")
-    
+
     def __getattr__(self, name):
         # Delegate all other attributes to the real connection
         return getattr(self._real_conn, name)
@@ -45,15 +48,17 @@ class MockSQLiteConnection:
 
 class MockSQLiteCursor:
     """Mock SQLite cursor that handles row factory properly."""
-    
+
     def __init__(self, real_cursor, row_factory):
         self._real_cursor = real_cursor
         self.row_factory = row_factory
-    
+
     def execute(self, *args, **kwargs):
+        """Execute a SQL command."""
         return self._real_cursor.execute(*args, **kwargs)
-    
+
     def fetchall(self):
+        """Fetch all rows, applying the row factory if set."""
         rows = self._real_cursor.fetchall()
         if self.row_factory == sqlite3.Row:
             # Convert tuples to dict-like objects that support column access by name
@@ -62,8 +67,9 @@ class MockSQLiteCursor:
                 column_names = [desc[0] for desc in description]
                 return [DictRow(zip(column_names, row)) for row in rows]
         return rows
-    
+
     def fetchone(self):
+        """Fetch one row, applying the row factory if set."""
         row = self._real_cursor.fetchone()
         if self.row_factory == sqlite3.Row and row is not None:
             description = self._real_cursor.description
@@ -71,7 +77,7 @@ class MockSQLiteCursor:
                 column_names = [desc[0] for desc in description]
                 return DictRow(zip(column_names, row))
         return row
-    
+
     def __getattr__(self, name):
         # Delegate all other attributes to the real cursor
         return getattr(self._real_cursor, name)
@@ -79,22 +85,23 @@ class MockSQLiteCursor:
 
 class DictRow:
     """Simple dict-like object to simulate sqlite3.Row behavior."""
-    
+
     def __init__(self, items):
         self._data = dict(items)
-    
+
     def __getitem__(self, key):
         if isinstance(key, str):
             return self._data[key]
         # For integer indices, return the value at that position
         return list(self._data.values())[key]
-    
+
     def __iter__(self):
         return iter(self._data.values())
-    
+
     def keys(self):
+        """Return the keys of the row."""
         return self._data.keys()
-    
+
     def __len__(self):
         return len(self._data)
 
@@ -115,7 +122,7 @@ class TestClient(unittest.TestCase):
 
         # Create our mock connection
         self.mock_conn = MockSQLiteConnection(self.real_conn)
-        
+    
         # Mock the sqlite3.connect to return our mock connection
         self.mock_connect = patch('sqlite3.connect', return_value=self.mock_conn)
         self.mock_connect.start()
@@ -205,7 +212,7 @@ class TestClient(unittest.TestCase):
 
         # Reset the mock connection state after the close() call
         self.mock_conn._closed = False
-        
+    
         c = self.mock_conn.cursor()
         c.execute("SELECT metrics_json FROM metrics_cache")
         row = c.fetchone()
@@ -219,11 +226,11 @@ class TestClient(unittest.TestCase):
         # Add some data to the cache
         metrics1 = {'cpu': {'usage': 50.0}}
         metrics2 = {'cpu': {'usage': 60.0}}
-        
+    
         client.cache_data(metrics1)
         # Reset the mock connection state
         self.mock_conn._closed = False
-        
+    
         client.cache_data(metrics2)
         # Reset the mock connection state
         self.mock_conn._closed = False

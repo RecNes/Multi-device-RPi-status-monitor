@@ -1,20 +1,26 @@
 """Unit tests for the server."""
 import json
 import os
-import sqlite3
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from server import app, get_db_conn, prune_inactive_devices, prune_old_stats
+from create_tables import create_tables
+from server.server import (
+    app,
+    get_db_conn,
+    prune_inactive_devices,
+    prune_old_stats
+)
 
 # Import the create_tables function
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from create_tables import create_tables
 
 # Get the server version from the config
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'server_config.json')
+CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__), '..', 'server_config.json'
+    )
 with open(CONFIG_PATH, 'r', encoding="UTF-8") as f:
     config = json.load(f)
     SERVER_VERSION = config.get('version', '0.0.0')
@@ -33,7 +39,7 @@ class TestServer(unittest.TestCase):
         # Initialize the database with the schema from create_tables.py
         with app.app_context():
             conn = get_db_conn()
-            create_tables(conn)  # Call the function instead of executing the file
+            create_tables(conn)
             conn.close()
 
     def tearDown(self):
@@ -69,17 +75,21 @@ class TestServer(unittest.TestCase):
     def test_receive_data(self):
         """Test receiving data from a client."""
         # First, register a device
-        response = self.app.post('/api/register',
-                      data=json.dumps({'device_uid': 'test-uid'}),
-                      content_type='application/json',
-                      headers={'X-Client-Version': SERVER_VERSION})
+        response = self.app.post(
+            '/api/register',
+            data=json.dumps({'device_uid': 'test-uid'}),
+            content_type='application/json',
+            headers={'X-Client-Version': SERVER_VERSION}
+        )
         device_data = json.loads(response.data)
         device_id = device_data['device_id']
 
         # Then, send some data
         metrics = {
             'cpu': {'usage': 50.0, 'frequency': '1000 MHz'},
-            'memory': {'total': 4, 'used': 1, 'available': 3, 'percentage': 25.0},
+            'memory': {
+                'total': 4, 'used': 1, 'available': 3, 'percentage': 25.0
+            },
             'disk': {'total': 100, 'used': 20, 'free': 80, 'percentage': 20.0},
             'network': {'interfaces': {}},
             'temperature': 45.0,
@@ -121,18 +131,22 @@ class TestServer(unittest.TestCase):
             conn = get_db_conn()
             c = conn.cursor()
             # Add a device
-            c.execute("INSERT INTO devices (device_uid, device_name) VALUES (?, ?)",
-                      ('test-uid-prune', 'test-device'))
+            c.execute(
+                "INSERT INTO devices (device_uid, device_name) VALUES (?, ?)",
+                ('test-uid-prune', 'test-device')
+            )
             device_id = c.lastrowid
             # Add an old stat
             old_date = datetime.now(timezone.utc) - timedelta(days=31)
             c.execute("""
-                INSERT INTO stats (device_id, timestamp, cpu_usage, memory_percentage, disk_percentage)
+                INSERT INTO stats (device_id, timestamp, cpu_usage,
+                memory_percentage, disk_percentage)
                 VALUES (?, ?, 10, 20, 30)
             """, (device_id, old_date))
             # Add a new stat
             c.execute("""
-                INSERT INTO stats (device_id, cpu_usage, memory_percentage, disk_percentage)
+                INSERT INTO stats (device_id, cpu_usage, memory_percentage,
+                disk_percentage)
                 VALUES (?, 11, 21, 31)
             """, (device_id,))
             conn.commit()
