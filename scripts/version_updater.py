@@ -32,7 +32,7 @@ update_file(
     r"Version: \d+\.\d+\.\d+",
     f"Version: {version}"
 )
-pattern_str = r'\s*"version":\s*"\d+\.\d+\.\d+"',
+pattern_str = r'\s*"version":\s*"\d+\.\d+\.\d+"'
 replacemant_str = f'    "version": "{version}"'
 config_files = [server_config_path, client_config_path]
 for config_file in config_files:
