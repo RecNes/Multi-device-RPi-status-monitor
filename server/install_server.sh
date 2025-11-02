@@ -16,11 +16,37 @@ SERVICE_FILE_PATH="/etc/systemd/system/$SERVICE_NAME"
 REQUIREMENTS_FILE="$INSTALL_DIR/requirements.txt"
 PROJECT_ROOT_DIR=$(dirname "$SCRIPT_DIR")
 
-echo "Creating installation directory at $INSTALL_DIR..."
-mkdir -p $INSTALL_DIR
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "Creating installation directory at $INSTALL_DIR..."
+    mkdir -p "$INSTALL_DIR"
+    echo "Copying application files..."
+else
+    echo "Installation directory $INSTALL_DIR already exists."
+    echo "Updating application files..."
+fi
 
-echo "Copying application files..."
-cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
+CONFIG_FILE_NAME="server_config.json"
+rsync -av --exclude="$CONFIG_FILE_NAME" "$SCRIPT_DIR/" "$INSTALL_DIR/"
+
+echo "Checking server configuration..."
+SRC_CONFIG="$SCRIPT_DIR/$CONFIG_FILE_NAME"
+DEST_CONFIG="$INSTALL_DIR/$CONFIG_FILE_NAME"
+
+if [ ! -f "$DEST_CONFIG" ]; then
+    echo "Configuration file not found in $INSTALL_DIR, copying..."
+    cp "$SRC_CONFIG" "$DEST_CONFIG"
+else
+    echo "Configuration file found. Updating version..."
+    # Extract version from source and update in destination
+    VERSION=$(grep -o '"version": "[^"]*"' "$SRC_CONFIG" | cut -d'"' -f4)
+    if [ -n "$VERSION" ]; then
+        sed -i 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' "$DEST_CONFIG"
+        echo "Version updated to $VERSION."
+    else
+        echo "Could not determine version from source config."
+        exit 1
+    fi
+fi
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -30,13 +56,13 @@ if command_exists apt-get; then
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
         echo "python3-venv not found. Attempting to install..."
         echo " "
-        apt-get update && apt-get install -y python3-venv gcc python3-dev
+        apt-get update && apt-get install -y python3-venv gcc python3-dev build-essential libffi-dev 
     fi
 elif command_exists yum; then
     if ! rpm -q python3-virtualenv >/dev/null 2>&1; then
         echo "python3-virtualenv not found. Attempting to install..."
         echo " "
-        yum install -y python3-virtualenv
+        yum install -y python3-virtualenv gcc libffi-devel python3-devel
     fi
 fi
 
@@ -57,6 +83,7 @@ fi
 
 echo "Installing Python dependencies and Gunicorn..."
 if [ -f "$REQUIREMENTS_FILE" ]; then
+    "$INSTALL_DIR/venv/bin/pip" install --upgrade pip setuptools wheel
     "$INSTALL_DIR/venv/bin/pip" install -r "$REQUIREMENTS_FILE"
     "$INSTALL_DIR/venv/bin/pip" install gunicorn
 else
@@ -166,7 +193,7 @@ After=network.target
 User=root
 Group=www-data
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/gunicorn --workers 10 --worker-class gevent -timeout 30 --keep-alive 5 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app  --log-level=info --access-logfile=/var/log/rpi-mointor-server.access --error-logfile=/var/log/rpi-mointor-server.error
+ExecStart=$INSTALL_DIR/venv/bin/gunicorn --workers 10 --worker-class sync --timeout 30 --keep-alive 5 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app  --log-level=info --access-logfile=/var/log/rpi-monitor-server.access --error-logfile=/var/log/rpi-monitor-server.error
 Restart=always
 RestartSec=5
 

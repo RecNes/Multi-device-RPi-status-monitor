@@ -10,7 +10,7 @@ fi
 echo "Starting RPi Monitor Client installation..."
 echo " "
 # Prompt for server URL
-read -p "Enter the full URL of the RPi Monitor Server (e.g., http://192.168.1.100:5000): " SERVER_URL
+read -p "Enter the full URL of the RPi Monitor Server (e.g., 192.168.1.100): " SERVER_URL
 
 if [ -z "$SERVER_URL" ]; then
     echo "Server URL cannot be empty. Aborting."
@@ -26,38 +26,64 @@ SERVICE_FILE_PATH="/etc/systemd/system/$SERVICE_NAME"
 REQUIREMENTS_FILE="$SCRIPT_DIR/requirements.txt"
 CLIENT_PY_FILE="$INSTALL_DIR/client.py"
 
-echo "Creating installation directory at $INSTALL_DIR..."
-mkdir -p $INSTALL_DIR
-cp "$SCRIPT_DIR"/*.py "$INSTALL_DIR/"
+if [ ! -d "$INSTALL_DIR" ]; then
+    echo "Creating installation directory at $INSTALL_DIR..."
+    mkdir -p "$INSTALL_DIR"
+    echo "Copying application files..."
+else
+    echo "Installation directory $INSTALL_DIR already exists."
+    echo "Updating application files..."
+fi
+
+CONFIG_FILE_NAME="server_config.json"
+rsync -av --exclude="$CONFIG_FILE_NAME" "$SCRIPT_DIR/" "$INSTALL_DIR/"
+
+echo "Checking client configuration..."
+SRC_CONFIG="$SCRIPT_DIR/$CONFIG_FILE_NAME"
+DEST_CONFIG="$INSTALL_DIR/$CONFIG_FILE_NAME"
+
+if [ ! -f "$DEST_CONFIG" ]; then
+    echo "Configuration file not found in $INSTALL_DIR, copying..."
+    cp "$SRC_CONFIG" "$DEST_CONFIG"
+else
+    echo "Configuration file found. Updating version..."
+    # Extract version from source and update in destination
+    VERSION=$(grep -o '"version": "[^"]*"' "$SRC_CONFIG" | cut -d'"' -f4)
+    if [ -n "$VERSION" ]; then
+        sed -i 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' "$DEST_CONFIG"
+        echo "Version updated to $VERSION."
+    else
+        echo "Could not determine version from source config."
+    fi
+fi
 
 echo "Configuring server URL in client script..."
 sed -i "s#^SERVER_URL = .*#SERVER_URL = '$SERVER_URL'#" "$CLIENT_PY_FILE"
 
-
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
+
 echo " "
 if command_exists apt-get; then
     if ! dpkg -s python3-venv >/dev/null 2>&1; then
         echo "python3-venv not found. Attempting to install..."
-        echo " "
         apt-get update && apt-get install -y python3-venv gcc python3-dev
     fi
 elif command_exists yum; then
     if ! rpm -q python3-virtualenv >/dev/null 2>&1; then
         echo "python3-virtualenv not found. Attempting to install..."
-        echo " "
         yum install -y python3-virtualenv
     fi
 fi
 
 if [ ! -d "$INSTALL_DIR/venv" ]; then
-    echo "Attempting to create a Python virtual environment..."
     echo " "
+    echo "Attempting to create a Python virtual environment..."
     python3 -m venv "$INSTALL_DIR/venv"
 fi
 
+echo " "
 if [ ! -f "$INSTALL_DIR/venv/bin/python" ]; then
     echo "Error: Python virtual environment creation failed."
     echo "Please ensure 'python3-venv' is installed and try"
@@ -100,7 +126,6 @@ WantedBy=multi-user.target"
 
 echo "$SERVICE_CONTENT" > $SERVICE_FILE_PATH
 
-echo "Enabling and starting the service..."
 systemctl daemon-reload
 if [ -f "$SERVICE_FILE_PATH" ]; then
     echo "Restarting service..."
