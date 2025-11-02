@@ -7,10 +7,8 @@ import os
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 version_info_file = os.path.join(base_dir, "version.json")
 readme_md_path = os.path.join(base_dir, "README.md")
-server_dir = os.path.join(base_dir, "server")
-client_dir = os.path.join(base_dir, "client")
-server_config_path = os.path.join(server_dir, "server_config.json")
-client_config_path = os.path.join(client_dir, "client_config.json")
+server_config_path = os.path.join(base_dir, "server", "server_config.json")
+client_config_path = os.path.join(base_dir, "client", "client_config.json")
 
 
 def update_file(path, pattern, replacement):
