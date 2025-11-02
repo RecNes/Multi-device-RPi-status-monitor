@@ -100,7 +100,6 @@ WantedBy=multi-user.target"
 
 echo "$SERVICE_CONTENT" > $SERVICE_FILE_PATH
 
-echo "Enabling and starting the service..."
 systemctl daemon-reload
 if [ -f "$SERVICE_FILE_PATH" ]; then
     echo "Restarting service..."
