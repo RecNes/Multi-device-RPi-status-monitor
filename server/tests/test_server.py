@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from create_tables import create_tables
-from ..server import (
+from server import (
     app,
     get_db_conn,
     prune_inactive_devices,
