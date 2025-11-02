@@ -116,9 +116,7 @@ fi
 echo "Using $WEBSERVER as the web server."
 
 if [ "$WEBSERVER" = "lighttpd" ]; then
-    echo " "
     echo "Configuring lighttpd..."
-    echo " "
     LIGHTTPD_CONFIG_SRC="$INSTALL_DIR/rpi_monitor.lighttpd"
     LIGHTTPD_CONFIG_DEST="/etc/lighttpd/conf-available/10-rpi_monitor.conf"
     
@@ -158,6 +156,7 @@ if [ -f "$SERVICE_FILE_PATH" ]; then
     echo "Updating $SERVICE_NAME systemd service file for Gunicorn..."
 else
     echo "Creating $SERVICE_NAME systemd service file for Gunicorn..."
+fi
 
 SERVICE_CONTENT="[Unit]
 Description=Gunicorn instance to serve RPi Monitor
