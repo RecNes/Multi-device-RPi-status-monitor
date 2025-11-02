@@ -66,6 +66,12 @@ def create_tables(conn=None):
                  FOREIGN KEY (stats_id) REFERENCES stats (id)
                  )''')
 
+    # Add amperage column to stats table if it doesn't exist
+    c.execute("PRAGMA table_info(stats)")
+    columns = [column[1] for column in c.fetchall()]
+    if 'amperage' not in columns:
+        c.execute("ALTER TABLE stats ADD COLUMN amperage REAL")
+
     conn.commit()
 
     if should_close:

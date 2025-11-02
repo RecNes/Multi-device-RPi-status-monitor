@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('voltage-sdram-i').textContent = 'N/A';
             document.getElementById('voltage-sdram-p').textContent = 'N/A';
         }
+        document.getElementById('amperage').textContent = data.amperage ? data.amperage.toFixed(3) + ' A' : 'N/A';
         
         updateNetworkStats(data.network_stats);
     };
@@ -300,14 +301,19 @@ document.addEventListener('DOMContentLoaded', () => {
             sdram_c: historyData.map(d => getVoltageProperty(d, 'sdram_c')).reverse(),
             sdram_i: historyData.map(d => getVoltageProperty(d, 'sdram_i')).reverse(),
             sdram_p: historyData.map(d => getVoltageProperty(d, 'sdram_p')).reverse(),
+            amperage: historyData.map(d => d.amperage).reverse(),
         };
         const datasets = [
-            { label: 'Core', data: voltageData.core, borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)' },
-            { label: 'SDRAM C', data: voltageData.sdram_c, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)' },
-            { label: 'SDRAM I', data: voltageData.sdram_i, borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)' },
-            { label: 'SDRAM P', data: voltageData.sdram_p, borderColor: 'rgba(153, 102, 255, 1)', backgroundColor: 'rgba(153, 102, 255, 0.2)' }
+            { label: 'Core', data: voltageData.core, borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)', yAxisID: 'y' },
+            { label: 'SDRAM C', data: voltageData.sdram_c, borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', yAxisID: 'y' },
+            { label: 'SDRAM I', data: voltageData.sdram_i, borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)', yAxisID: 'y' },
+            { label: 'SDRAM P', data: voltageData.sdram_p, borderColor: 'rgba(153, 102, 255, 1)', backgroundColor: 'rgba(153, 102, 255, 0.2)', yAxisID: 'y' },
+            { label: 'Amperage', data: voltageData.amperage, borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', yAxisID: 'y1' }
         ];
-        const options = { scales: { y: { title: { display: true, text: 'Voltage (V)' } } } };
+        const options = { scales: { 
+            y: { title: { display: true, text: 'Voltage (V)' }, position: 'left' },
+            y1: { title: { display: true, text: 'Amperage (A)' }, position: 'right', grid: { drawOnChartArea: false } }
+        } };
         voltageChart = createOrUpdateChart(voltageChart, 'volt-throttle-chart', labels, datasets, options);
     };
 

@@ -141,11 +141,14 @@ def receive_data():
         if not cursor.fetchone():
             return jsonify({'error': 'Device not registered'}), 404
 
+        amperage = metrics.get('voltages', {}).pop('amperage', None)
+
         cursor.execute('''INSERT INTO stats (
                     device_id, cpu_usage, cpu_frequency, memory_used,
                     memory_total, memory_percentage, disk_used, disk_total,
-                    disk_percentage, temperature, uptime, throttled, voltages
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    disk_percentage, temperature, uptime, throttled, voltages,
+                    amperage
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
             device_id,
             metrics['cpu']['usage'],
             metrics['cpu']['frequency'],
@@ -159,6 +162,7 @@ def receive_data():
             metrics.get('uptime', 0.0),
             metrics.get('throttled'),
             json.dumps(metrics.get('voltages', {})),
+            amperage,
         ))
 
         stats_id = cursor.lastrowid
@@ -203,7 +207,7 @@ def api_history(device_id):
     try:
         c.execute('''
             SELECT timestamp, cpu_usage, cpu_frequency, memory_percentage,
-                   disk_percentage, temperature, voltages, uptime
+                   disk_percentage, temperature, voltages, uptime, amperage
             FROM stats
             WHERE device_id = ?
             ORDER BY timestamp DESC
@@ -225,7 +229,7 @@ def api_latest(device_id):
 
     try:
         c.execute('''
-            SELECT s.*, d.device_name, d.hostname, d.ip_address
+            SELECT s.*, d.device_name, d.hostname, d.ip_address, s.amperage
             FROM stats s
             JOIN devices d ON s.device_id = d.id
             WHERE s.device_id = ?

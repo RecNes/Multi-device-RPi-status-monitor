@@ -134,7 +134,7 @@ def get_voltage_info():
                     ) as f:
                         temp_str = f.read().strip()
                         current_amps = float(temp_str) / 1000.0
-                        voltages["sdram_c"] = current_amps
+                        voltages["amperage"] = current_amps
                 except Exception:
                     pass
                 try:
@@ -147,6 +147,15 @@ def get_voltage_info():
                 except Exception:
                     pass
     else:
+        try:
+            # Check for amperage on Raspberry Pi
+            if os.path.exists('/sys/class/power_supply/max17042/current_now'):
+                with open('/sys/class/power_supply/max17042/current_now', 'r', encoding="UTF-8") as f:
+                    amp_str = f.read().strip()
+                    voltages["amperage"] = float(amp_str) / 1000000.0
+        except Exception:
+            pass
+
         try:
             for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
                 try:
