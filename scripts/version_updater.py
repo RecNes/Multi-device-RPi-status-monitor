@@ -2,7 +2,7 @@ import json
 import re
 
 version_info_file = "../version.json"
-with open("version_info_file") as f:
+with open(version_info_file) as f:
     version = json.load(f)["version"]
 
 readme_md_path = "../README.md"
