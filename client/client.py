@@ -149,8 +149,9 @@ def get_voltage_info():
     else:
         try:
             # Check for amperage on Raspberry Pi
-            if os.path.exists('/sys/class/power_supply/max17042/current_now'):
-                with open('/sys/class/power_supply/max17042/current_now', 'r', encoding="UTF-8") as f:
+            power_info_path = "/sys/class/power_supply/max17042/current_now"
+            if os.path.exists(power_info_path):
+                with open(power_info_path, 'r', encoding="UTF-8") as f:
                     amp_str = f.read().strip()
                     voltages["amperage"] = float(amp_str) / 1000000.0
         except Exception:

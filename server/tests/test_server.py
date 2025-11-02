@@ -1,12 +1,13 @@
 """Unit tests for the server."""
 import json
 import os
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 
 from create_tables import create_tables
-from server.server import (
+from ..server import (
     app,
     get_db_conn,
     prune_inactive_devices,
@@ -14,7 +15,6 @@ from server.server import (
 )
 
 # Import the create_tables function
-import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Get the server version from the config
