@@ -1,3 +1,5 @@
+"""Script to update version numbers in README.md and
+config files based on version.json."""
 import json
 import re
 
