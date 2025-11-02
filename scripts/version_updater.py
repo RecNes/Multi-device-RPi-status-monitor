@@ -17,7 +17,7 @@ def update_file(path, pattern, replacement):
         content = f2.read()
     new_content = re.sub(pattern, replacement, content)
     if new_content != content:
-        print(f"Updated: {path}")
+        print(f"{new_content} Updated: {path}")
         with open(path, "w", encoding="utf-8") as f3:
             f3.write(new_content)
     else:
