@@ -74,12 +74,12 @@ else
     echo "WARNING: requirements.txt not found. Skipping dependency installation."
 fi
 
-
 echo " "
 if [ -f "$SERVICE_FILE_PATH" ]; then
     echo "Updating $SERVICE_NAME systemd service file..."
 else
     echo "Creating $SERVICE_NAME systemd service file..."
+fi
 
 SERVICE_CONTENT="[Unit]
 Description=RPi Monitor Client
