@@ -32,15 +32,14 @@ update_file(
     r"Version: \d+\.\d+\.\d+",
     f"Version: {version}"
 )
-update_file(
-    server_config_path,
-    r'"version":\s*"\d+\.\d+\.\d+"',
-    f'"version": "{version}"'
-)
-update_file(
-    client_config_path,
-    r'"version":\s*"\d+\.\d+\.\d+"',
-    f'"version": "{version}"'
-)
+pattern_str = r'\s*"version":\s*"\d+\.\d+\.\d+"',
+replacemant_str = f'    "version": "{version}"'
+config_files = [server_config_path, client_config_path]
+for config_file in config_files:
+    update_file(
+        config_file,
+        pattern_str,
+        replacemant_str
+    )
 
 print("Version update completed.")
