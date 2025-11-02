@@ -8,7 +8,9 @@ import importlib.util
 import requests
 
 # Load the client module from file
-client_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'client.py'))
+client_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', 'client.py')
+)
 spec = importlib.util.spec_from_file_location("client", client_path)
 client = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(client)
@@ -25,13 +27,17 @@ class MockSQLiteConnection:
     def cursor(self):
         """Return a mock cursor that respects the row factory."""
         if self._closed:
-            raise sqlite3.ProgrammingError("Cannot operate on a closed database.")
+            raise sqlite3.ProgrammingError(
+                "Cannot operate on a closed database."
+            )
         return MockSQLiteCursor(self._real_conn.cursor(), self.row_factory)
 
     def commit(self):
         """Commit changes to the database."""
         if self._closed:
-            raise sqlite3.ProgrammingError("Cannot operate on a closed database.")
+            raise sqlite3.ProgrammingError(
+                "Cannot operate on a closed database."
+            )
         return self._real_conn.commit()
 
     def close(self):
@@ -61,7 +67,8 @@ class MockSQLiteCursor:
         """Fetch all rows, applying the row factory if set."""
         rows = self._real_cursor.fetchall()
         if self.row_factory == sqlite3.Row:
-            # Convert tuples to dict-like objects that support column access by name
+            # Convert tuples to dict-like objects that support column
+            # access by name
             description = self._real_cursor.description
             if description:
                 column_names = [desc[0] for desc in description]
@@ -122,9 +129,11 @@ class TestClient(unittest.TestCase):
 
         # Create our mock connection
         self.mock_conn = MockSQLiteConnection(self.real_conn)
-    
+
         # Mock the sqlite3.connect to return our mock connection
-        self.mock_connect = patch('sqlite3.connect', return_value=self.mock_conn)
+        self.mock_connect = patch(
+            'sqlite3.connect', return_value=self.mock_conn
+        )
         self.mock_connect.start()
 
     def tearDown(self):
@@ -165,9 +174,9 @@ class TestClient(unittest.TestCase):
         mock_cpu_percent.return_value = 50.0
         mock_cpu_freq.return_value = MagicMock(current=1000.0)
         mock_mem.return_value = MagicMock(total=4*1024**3, used=1*1024**3,
-                                         available=3*1024**3, percent=25.0)
+                                          available=3*1024**3, percent=25.0)
         mock_disk.return_value = MagicMock(total=100*1024**3, used=20*1024**3,
-                                          free=80*1024**3)
+                                           free=80*1024**3)
         mock_net_io.return_value = MagicMock(bytes_sent=100, bytes_recv=200,
                                              packets_sent=10, packets_recv=20)
         mock_net_addrs.return_value = {}
@@ -189,7 +198,8 @@ class TestClient(unittest.TestCase):
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
 
-        config = {'device_id': 'test-device', 'server_url': 'http://test-server'}
+        config = {'device_id': 'test-device',
+                  'server_url': 'http://test-server'}
         metrics = {'cpu': {'usage': 50.0}}
         result = client.send_data(config, metrics)
 
@@ -200,7 +210,8 @@ class TestClient(unittest.TestCase):
     def test_send_data_failure(self, mock_post):
         """Test sending data with a failure."""
         mock_post.side_effect = requests.exceptions.RequestException
-        config = {'device_id': 'test-device', 'server_url': 'http://test-server'}
+        config = {'device_id': 'test-device',
+                  'server_url': 'http://test-server'}
         metrics = {'cpu': {'usage': 50.0}}
         result = client.send_data(config, metrics)
         self.assertFalse(result)
@@ -212,7 +223,7 @@ class TestClient(unittest.TestCase):
 
         # Reset the mock connection state after the close() call
         self.mock_conn._closed = False
-    
+
         c = self.mock_conn.cursor()
         c.execute("SELECT metrics_json FROM metrics_cache")
         row = c.fetchone()
@@ -226,18 +237,19 @@ class TestClient(unittest.TestCase):
         # Add some data to the cache
         metrics1 = {'cpu': {'usage': 50.0}}
         metrics2 = {'cpu': {'usage': 60.0}}
-    
+
         client.cache_data(metrics1)
         # Reset the mock connection state
         self.mock_conn._closed = False
-    
+
         client.cache_data(metrics2)
         # Reset the mock connection state
         self.mock_conn._closed = False
 
         # Mock send_data to always succeed
         mock_send_data.return_value = True
-        config = {'device_id': 'test-device', 'server_url': 'http://test-server'}
+        config = {'device_id': 'test-device',
+                  'server_url': 'http://test-server'}
         client.send_cached_data(config)
 
         # Check that the cache is empty

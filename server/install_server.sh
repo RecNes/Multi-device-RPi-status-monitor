@@ -154,8 +154,10 @@ else
 fi
 
 echo " "
-echo "Creating systemd service file for Gunicorn..."
-echo " "
+if [ -f "$SERVICE_FILE_PATH" ]; then
+    echo "Updating $SERVICE_NAME systemd service file for Gunicorn..."
+else
+    echo "Creating $SERVICE_NAME systemd service file for Gunicorn..."
 
 SERVICE_CONTENT="[Unit]
 Description=Gunicorn instance to serve RPi Monitor
@@ -163,9 +165,9 @@ After=network.target
 
 [Service]
 User=root
-Group=root
+Group=www-data
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/gunicorn --workers 3 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app
+ExecStart=$INSTALL_DIR/venv/bin/gunicorn --workers 10 --worker-class gevent -timeout 30 --keep-alive 5 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app  --log-level=info --access-logfile=/var/log/rpi-mointor-server.access --error-logfile=/var/log/rpi-mointor-server.error
 Restart=always
 RestartSec=5
 
@@ -173,11 +175,16 @@ RestartSec=5
 WantedBy=multi-user.target"
 
 echo "$SERVICE_CONTENT" > "$SERVICE_FILE_PATH"
-
-echo "Enabling and starting services..."
 systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
-systemctl start "$SERVICE_NAME"
+
+if [ -f "$SERVICE_FILE_PATH" ]; then
+    echo "Restarting service..."
+    systemctl restart "$SERVICE_NAME"
+else
+    echo "Enabling and starting services..."
+    systemctl enable "$SERVICE_NAME"
+    systemctl start "$SERVICE_NAME"
+fi
 
 echo " "
 echo "-------------------------------------------------"
