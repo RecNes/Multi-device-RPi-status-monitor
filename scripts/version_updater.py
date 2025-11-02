@@ -14,19 +14,20 @@ client_config_path = os.path.join(client_dir, "client_config.json")
 
 
 def update_file(path, pattern, replacement):
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
+    """Update the version in a file based on a regex pattern."""
+    with open(path, "r", encoding="utf-8") as f2:
+        content = f2.read()
     new_content = re.sub(pattern, replacement, content)
     if new_content != content:
         print(f"Updated: {path}")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(new_content)
+        with open(path, "w", encoding="utf-8") as f3:
+            f3.write(new_content)
     else:
         print(f"No changes needed in: {path}")
 
 
-with open(version_info_file, "r", encoding="utf-8") as f:
-    version = json.load(f)["version"]
+with open(version_info_file, "r", encoding="utf-8") as f1:
+    version = json.load(f1)["version"]
 
 update_file(
     readme_md_path,
