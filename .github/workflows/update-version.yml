@@ -7,8 +7,6 @@ on:
 
 jobs:
   update-readme:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     permissions:
       contents: write
