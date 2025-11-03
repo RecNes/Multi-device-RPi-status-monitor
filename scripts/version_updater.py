@@ -7,10 +7,8 @@ import os
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 version_info_file = os.path.join(base_dir, "version.json")
 readme_md_path = os.path.join(base_dir, "README.md")
-server_dir = os.path.join(base_dir, "server")
-client_dir = os.path.join(base_dir, "client")
-server_config_path = os.path.join(server_dir, "server_config.json")
-client_config_path = os.path.join(client_dir, "client_config.json")
+server_config_path = os.path.join(base_dir, "server", "server_config.json")
+client_config_path = os.path.join(base_dir, "client", "client_config.json")
 
 
 def update_file(path, pattern, replacement):
@@ -19,7 +17,7 @@ def update_file(path, pattern, replacement):
         content = f2.read()
     new_content = re.sub(pattern, replacement, content)
     if new_content != content:
-        print(f"Updated: {path}")
+        print(f"{new_content} Updated: {path}")
         with open(path, "w", encoding="utf-8") as f3:
             f3.write(new_content)
     else:
@@ -34,15 +32,14 @@ update_file(
     r"Version: \d+\.\d+\.\d+",
     f"Version: {version}"
 )
-update_file(
-    server_config_path,
-    r'"version":\s*"\d+\.\d+\.\d+"',
-    f'"version": "{version}"'
-)
-update_file(
-    client_config_path,
-    r'"version":\s*"\d+\.\d+\.\d+"',
-    f'"version": "{version}"'
-)
+pattern_str = r'\s*"version":\s*"\d+\.\d+\.\d+"'
+replacemant_str = f'    "version": "{version}"'
+config_files = [server_config_path, client_config_path]
+for config_file in config_files:
+    update_file(
+        config_file,
+        pattern_str,
+        replacemant_str
+    )
 
 print("Version update completed.")

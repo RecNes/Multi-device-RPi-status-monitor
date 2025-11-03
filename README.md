@@ -1,10 +1,11 @@
-# 🍓 Multi-Device Raspberry Pi Status Monitor
+
+# <img src="/logo-transparent.png" alt="Multi-Device Raspberry Pi Status Monitor" width="128"> Multi-Device Raspberry Pi Status Monitor
 
 [![CodeQL](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql)
 [![pages-build-deployment](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment)
 [![Pylint](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pylint.yml/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pylint.yml)
 
-Version: 0.0.0
+Version: 3.3.5
 
 This project provides a centralized web dashboard for monitoring the system metrics of multiple Raspberry Pi (or other Debian-based) devices. It uses a client-server architecture where lightweight clients send data from each monitored device to a central server, which then displays the information in a real-time web interface.
 

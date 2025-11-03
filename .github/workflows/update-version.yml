@@ -1,4 +1,4 @@
-name: Update Version
+name: Update Version Number
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - version.json
 
 jobs:
-  update-readme:
+  update-version-number:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,6 +29,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add README.md
+          git add .
           git commit -m "Version number updated from version.json"
           git push
