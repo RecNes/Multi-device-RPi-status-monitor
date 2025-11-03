@@ -193,7 +193,7 @@ After=network.target
 User=root
 Group=www-data
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/gunicorn --workers 10 --worker-class sync --timeout 30 --keep-alive 5 --bind unix:/tmp/rpi_monitor.sock -m 007 server:app  --log-level=info --access-logfile=/var/log/rpi-monitor-server.access --error-logfile=/var/log/rpi-monitor-server.error
+ExecStart=$INSTALL_DIR/venv/bin/gunicorn server:app --configuration=/opt/rpi-monitor-server/gunicorn.conf
 Restart=always
 RestartSec=5
 
