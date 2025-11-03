@@ -193,7 +193,7 @@ After=network.target
 User=root
 Group=www-data
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$INSTALL_DIR/venv/bin/gunicorn server:app --config /opt/rpi-monitor-server/gunicorn.conf
+ExecStart=$INSTALL_DIR/venv/bin/gunicorn server:app --config /opt/rpi-monitor-server/gunicorn_conf.py
 Restart=always
 RestartSec=5
 
