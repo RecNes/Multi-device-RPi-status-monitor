@@ -1,4 +1,5 @@
-# ![Multi-Device Raspberry Pi Status Monitor](/logo.png) Multi-Device Raspberry Pi Status Monitor
+
+# <img src="/logo.png" alt="Multi-Device Raspberry Pi Status Monitor" width="50"> Multi-Device Raspberry Pi Status Monitor
 
 [![CodeQL](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql)
 [![pages-build-deployment](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment)
