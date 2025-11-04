@@ -422,13 +422,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openModalWithChart = (chartInstance) => {
         if (!chartInstance) return;
-        modal.classList.remove('hidden');
-        const modalCtx = document.getElementById('modal-chart').getContext('2d');
         
         if (modalChart) {
             modalChart.destroy();
         }
 
+        modal.classList.remove('hidden');
+        const modalCtx = document.getElementById('modal-chart').getContext('2d');
+        
         modalChart = new Chart(modalCtx, {
             type: 'line',
             data: chartInstance.data,
