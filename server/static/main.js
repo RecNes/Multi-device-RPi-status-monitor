@@ -415,8 +415,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const modal = document.getElementById('chart-modal');
+    const modalClose = document.querySelector('.modal-close');
+    const modalCloseBtn = document.querySelector('.modal-close-btn');
+    let modalChart = null;
+
+    const openModalWithChart = (chartInstance) => {
+        if (!chartInstance) return;
+        modal.classList.remove('hidden');
+        const modalCtx = document.getElementById('modal-chart').getContext('2d');
+        
+        if (modalChart) {
+            modalChart.destroy();
+        }
+
+        modalChart = new Chart(modalCtx, {
+            type: 'line',
+            data: chartInstance.data,
+            options: {
+                ...chartInstance.options,
+                maintainAspectRatio: false,
+            }
+        });
+    };
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        if (modalChart) {
+            modalChart.destroy();
+            modalChart = null;
+        }
+    };
+
+    modalClose.addEventListener('click', closeModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.getElementById('cpu-chart').parentElement.addEventListener('click', () => openModalWithChart(cpuChart));
+    document.getElementById('memory-chart').parentElement.addEventListener('click', () => openModalWithChart(memoryChart));
+    document.getElementById('disk-chart').parentElement.addEventListener('click', () => openModalWithChart(diskChart));
+    document.getElementById('temp-chart').parentElement.addEventListener('click', () => openModalWithChart(tempChart));
+    document.getElementById('volt-throttle-chart').parentElement.addEventListener('click', () => openModalWithChart(voltageChart));
+
     // Initial load
     loadDevices();
+
 
     // --- Collapsible Chart State Persistence ---
     const loadChartStates = () => {

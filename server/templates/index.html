@@ -169,6 +169,16 @@
         </footer>
     </div>
 
+    <div id="chart-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="modal-chart-container">
+                <canvas id="modal-chart"></canvas>
+            </div>
+            <button class="modal-close-btn">Close</button>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
