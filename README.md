@@ -18,10 +18,14 @@ This project provides a centralized web dashboard for monitoring the system metr
 *   **Centralized Multi-Device Monitoring:** View the status of all your devices from a single web page.
 *   **Real-Time Data:** Live updates for CPU, RAM, Disk usage, Temperature, and Uptime.
 *   **Historical Data Charts:** View historical trends for all major metrics in interactive charts.
+*   **Click-to-Enlarge Charts:** Click on any chart to view a larger, more detailed version in a modal window.
 *   **Detailed Network Statistics:** See in-depth data for each network interface, including traffic and speed.
 *   **Voltage & Throttling Status:** Monitor core voltages and system throttling status for Raspberry Pi devices.
 *   **Collapsible UI Elements:** Both network cards and metric charts are collapsible for a clean and focused view.
 *   **Device Preference:** The dashboard remembers your last selected device across sessions.
+*   **Automatic Data Pruning:** The server automatically purges historical data older than 30 days to conserve space.
+*   **Inactive Device Removal:** Devices that have been inactive for over a week are automatically removed from the dashboard.
+*   **Version Sync:** The client and server versions must match, ensuring data compatibility.
 *   **Resilient & Lightweight:** A robust Flask server collects data from multiple Python clients that run efficiently in the background.
 *   **Automated Setup:** Simple installation scripts and `systemd` services for both server and client.
 
