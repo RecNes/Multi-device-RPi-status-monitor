@@ -422,21 +422,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openModalWithChart = (chartInstance) => {
         if (!chartInstance) return;
-        
+
         if (modalChart) {
             modalChart.destroy();
         }
 
         modal.classList.remove('hidden');
         const modalCtx = document.getElementById('modal-chart').getContext('2d');
-        
+
+        // Deep copy options to prevent Chart.js from reusing internal state/resolvers.
+        const newOptions = JSON.parse(JSON.stringify(chartInstance.options));
+        newOptions.maintainAspectRatio = false;
+
         modalChart = new Chart(modalCtx, {
             type: 'line',
-            data: chartInstance.data,
-            options: {
-                ...chartInstance.options,
-                maintainAspectRatio: false,
-            }
+            data: chartInstance.data, // Data can usually be passed by reference
+            options: newOptions
         });
     };
 
