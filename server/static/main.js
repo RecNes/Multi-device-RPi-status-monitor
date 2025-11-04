@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const PREFERRED_DEVICE_KEY = 'preferredDeviceId';
 
-    // UI Update Functions
     const updateText = (id, value) => {
         const elements = document.getElementsByClassName(id);
         for (let el of elements) {
@@ -24,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(id);
         if (el) {
             el.style.width = `${percentage}%`;
-            // el.textContent = `${percentage}%`; // Optional: text inside bar
         }
     };
     
@@ -72,22 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
         updateText('memory-used', data.memory_used);
         updateText('memory-total', data.memory_total);
 
-        // Disk
         const diskPerc = parseFloat(data.disk_percentage).toFixed(1);
         updateText('disk-usage', diskPerc + ' %');
         updateProgressBar('disk-bar', diskPerc);
         updateText('disk-used', data.disk_used);
         updateText('disk-total', data.disk_total);
 
-        // Temperature
         updateText('temperature', parseFloat(data.temperature).toFixed(1) + ' °C');
 
-        // Voltages & Throttled Status
         document.getElementById('throttled').textContent = data.throttled || 'N/A';
         const throttledIndicator = document.getElementById('throttled-indicator');
         if (throttledIndicator) {
             throttledIndicator.classList.remove('status-ok', 'status-problem', 'status-unknown');
-            // Use `== null` to check for both undefined and null
             if (data.throttled == null) {
                 throttledIndicator.classList.add('status-unknown');
             } else if (data.throttled.trim() === '0x0') {
@@ -135,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const receivedInterfaces = new Set(Object.keys(interfaces || {}));
 
-        // Remove interfaces that are no longer present
         for (const ifaceName of existingInterfaces) {
             if (!receivedInterfaces.has(ifaceName)) {
                 container.querySelector(`details[data-iface-name="${ifaceName}"]`).remove();
@@ -158,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let details = container.querySelector(`details[data-iface-name="${ifaceName}"]`);
 
             if (!details) {
-                // Create new element if it doesn't exist
                 details = document.createElement('details');
                 details.dataset.ifaceName = ifaceName;
                 if (isFirstInterface) {
@@ -194,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 container.appendChild(details);
             } else {
-                // Update existing element
                 details.querySelector('.bytes-sent').textContent = `${(stats.bytes_sent || 0).toLocaleString()} Bytes`;
                 details.querySelector('.bytes-recv').textContent = `${(stats.bytes_recv || 0).toLocaleString()} Bytes`;
                 details.querySelector('.packets-sent').textContent = (stats.packets_sent || 0).toLocaleString();
@@ -391,8 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (updateInterval) {
             clearInterval(updateInterval);
         }
-        fetchData(); // Fetch immediately
-        updateInterval = setInterval(fetchData, 5000); // Then every 5 seconds
+        fetchData();
+        updateInterval = setInterval(fetchData, 5000);
     };
 
     deviceSelector.addEventListener('change', () => {
@@ -430,13 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
         const modalCtx = document.getElementById('modal-chart').getContext('2d');
 
-        // Deep copy options to prevent Chart.js from reusing internal state/resolvers.
         const newOptions = JSON.parse(JSON.stringify(chartInstance.options));
         newOptions.maintainAspectRatio = false;
 
         modalChart = new Chart(modalCtx, {
             type: 'line',
-            data: chartInstance.data, // Data can usually be passed by reference
+            data: chartInstance.data,
             options: newOptions
         });
     };
@@ -463,11 +453,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('temp-chart').parentElement.addEventListener('click', () => openModalWithChart(tempChart));
     document.getElementById('volt-throttle-chart').parentElement.addEventListener('click', () => openModalWithChart(voltageChart));
 
-    // Initial load
     loadDevices();
 
-
-    // --- Collapsible Chart State Persistence ---
     const loadChartStates = () => {
         document.querySelectorAll('.chart-details').forEach(details => {
             const canvas = details.querySelector('canvas');
@@ -480,14 +467,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Add event listeners to save state on change.
-    // This is more efficient as it only saves the state for the toggled element.
     metricsContainer.addEventListener('click', (event) => {
         const summary = event.target.closest('summary');
         if (summary && summary.parentElement.classList.contains('chart-details')) {
             const details = summary.parentElement;
             const canvas = details.querySelector('canvas');
-            // State is toggled after the click, so use a timeout to get the new state
             setTimeout(() => {
                 if (canvas && canvas.id) {
                     localStorage.setItem(`chart-state-${canvas.id}`, details.open);
@@ -496,6 +480,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Load initial states when the page is ready
     loadChartStates();
 });

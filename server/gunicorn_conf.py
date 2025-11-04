@@ -1,3 +1,4 @@
+"""Gunicorn configuration file for RPi Monitor Server"""
 bind = "unix:/tmp/rpi_monitor.sock"
 umask = 0o007
 workers = 2

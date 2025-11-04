@@ -1,4 +1,5 @@
-"""Script to create the necessary database tables for system stats monitoring."""
+"""Script to create the necessary database tables
+for system stats monitoring."""
 import sqlite3
 import os
 
@@ -20,7 +21,6 @@ def create_tables(conn=None):
 
     c = conn.cursor()
 
-    # Devices table
     c.execute('''CREATE TABLE IF NOT EXISTS devices (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
                  device_uid TEXT UNIQUE NOT NULL,
@@ -30,7 +30,6 @@ def create_tables(conn=None):
                  last_seen DATETIME
                  )''')
 
-    # System stats table
     c.execute('''CREATE TABLE IF NOT EXISTS stats (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
                  device_id INTEGER,
@@ -50,7 +49,6 @@ def create_tables(conn=None):
                  FOREIGN KEY (device_id) REFERENCES devices (id)
                  )''')
 
-    # Network stats table
     c.execute('''CREATE TABLE IF NOT EXISTS network_stats (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
                  stats_id INTEGER,
@@ -66,7 +64,6 @@ def create_tables(conn=None):
                  FOREIGN KEY (stats_id) REFERENCES stats (id)
                  )''')
 
-    # Add amperage column to stats table if it doesn't exist
     c.execute("PRAGMA table_info(stats)")
     columns = [column[1] for column in c.fetchall()]
     if 'amperage' not in columns:

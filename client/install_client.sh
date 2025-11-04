@@ -9,7 +9,6 @@ fi
 
 echo "Starting RPi Monitor Client installation..."
 echo " "
-# Prompt for server URL
 read -p "Enter the full URL of the RPi Monitor Server (e.g., 192.168.1.100): " SERVER_URL
 
 if [ -z "$SERVER_URL" ]; then
@@ -47,7 +46,6 @@ if [ ! -f "$DEST_CONFIG" ]; then
     cp "$SRC_CONFIG" "$DEST_CONFIG"
 else
     echo "Configuration file found. Updating version..."
-    # Extract version from source and update in destination
     VERSION=$(grep -o '"version": "[^"]*"' "$SRC_CONFIG" | cut -d'"' -f4)
     if [ -n "$VERSION" ]; then
         sed -i 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' "$DEST_CONFIG"

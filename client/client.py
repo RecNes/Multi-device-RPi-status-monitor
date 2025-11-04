@@ -11,7 +11,6 @@ import psutil
 import requests
 
 
-# This will be configured during installation
 SERVER_URL = 'http://localhost:5000'
 if not SERVER_URL.startswith('http'):
     SERVER_URL = 'http://' + SERVER_URL
@@ -91,7 +90,6 @@ def get_temperature():
         temp = float(temp_str.replace('temp=', '').replace("'C", ''))
         return temp
     except (FileNotFoundError, subprocess.CalledProcessError):
-        # vcgencmd not available
         max_temp = 0
         if hasattr(psutil, 'sensors_temperatures'):
             temps = psutil.sensors_temperatures()
@@ -148,7 +146,6 @@ def get_voltage_info():
                     pass
     else:
         try:
-            # Check for amperage on Raspberry Pi
             power_info_path = "/sys/class/power_supply/max17042/current_now"
             if os.path.exists(power_info_path):
                 with open(power_info_path, 'r', encoding="UTF-8") as f:
@@ -184,19 +181,16 @@ def get_active_ifaces(net_io_ifaces, net_if_addrs, net_if_stats):
     """Get active network interfaces with stats."""
     active_ifaces = {}
     for iface, stats in net_io_ifaces.items():
-        # Skip loopback and inactive interfaces
         if (iface == 'lo' or stats.bytes_sent + stats.bytes_recv == 0 or
                 iface.startswith(('veth', 'docker', 'br-'))):
             continue
 
-        # Get interface details
         if_stats = net_if_stats.get(iface, None)
         is_up = if_stats.isup if if_stats else False
 
         if not is_up:
             continue
 
-        # Basic stats
         iface_info = {
             'bytes_sent': stats.bytes_sent,
             'bytes_recv': stats.bytes_recv,
@@ -372,12 +366,10 @@ def send_cached_data(config):
     for row in rows:
         metrics = json.loads(row['metrics_json'])
         if send_data(config, metrics):
-            # Delete from cache only if successfully sent
             c.execute("DELETE FROM metrics_cache WHERE id = ?", (row['id'],))
             conn.commit()
             print(f"Successfully sent cached record ID {row['id']}.")
         else:
-            # Stop if server is not reachable
             print("Server still unreachable. Stopping cache sending.")
             break
     conn.close()
@@ -399,16 +391,12 @@ def main():
             return
 
     while True:
-        # First, try to send any cached data
         send_cached_data(config)
 
-        # Collect new data
         print("Collecting new metrics...")
         metrics = collect_metrics_once()
 
-        # Try to send new data
         if not send_data(config, metrics):
-            # If it fails, cache it
             cache_data(metrics)
 
         time.sleep(COLLECT_INTERVAL)

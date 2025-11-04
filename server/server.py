@@ -136,7 +136,6 @@ def receive_data():
     cursor = conn.cursor()
 
     try:
-        # Verify device_id exists
         cursor.execute('SELECT id FROM devices WHERE id = ?', (device_id,))
         if not cursor.fetchone():
             return jsonify({'error': 'Device not registered'}), 404
@@ -243,7 +242,6 @@ def api_latest(device_id):
 
         latest_dict = dict(latest)
 
-        # Also fetch network stats for this entry
         c.execute('''
             SELECT interface_name,
                    bytes_sent,
@@ -262,7 +260,6 @@ def api_latest(device_id):
 
         return jsonify(latest_dict)
     except sqlite3.Error:
-        # If any database error occurs, return a 500 error.
         return jsonify({'error': 'Database error occurred'}), 500
 
 
@@ -378,7 +375,6 @@ def start_cleanup_thread():
 
 
 if __name__ == '__main__':
-    # The init_db logic is now in create_tables.py and should be run manually.
     start_cleanup_thread()
     app.run(
         host='0.0.0.0',

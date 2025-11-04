@@ -37,7 +37,6 @@ if [ ! -f "$DEST_CONFIG" ]; then
     cp "$SRC_CONFIG" "$DEST_CONFIG"
 else
     echo "Configuration file found. Updating version..."
-    # Extract version from source and update in destination
     VERSION=$(grep -o '"version": "[^"]*"' "$SRC_CONFIG" | cut -d'"' -f4)
     if [ -n "$VERSION" ]; then
         sed -i 's/"version": "[^"]*"/"version": "'"$VERSION"'"/' "$DEST_CONFIG"
@@ -171,7 +170,6 @@ else
     sed -i "s|alias /home/pi/rpi_monitor_app/static;|alias $INSTALL_DIR/static;|" "$NGINX_CONFIG_DEST"
 
     if [ -n "$NGINX_SYMLINK" ]; then
-      # rm -f /etc/nginx/sites-enabled/default
       ln -sfn "$NGINX_CONFIG_DEST" "$NGINX_SYMLINK"
     fi
     
