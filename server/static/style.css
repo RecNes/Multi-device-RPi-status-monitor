@@ -345,12 +345,23 @@ footer {
     text-decoration: underline;
 }
 
-/* Updated styles for voltage/throttled details */
+.link-text {
+    text-align: center;
+    font-size: 1.3rem;
+    color: #3498db;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.link-text:hover {
+    text-decoration: underline;
+}
+
 .stat-small {
     margin-top: 15px;
     display: flex;
     flex-direction: column;
-    gap: 8px; /* Space between items */
+    gap: 8px; 
 }
 
 .stat-detail-item {
@@ -386,7 +397,7 @@ footer {
 }
 
 .stat-row .stat-value {
-    font-size: 1.5rem; /* Smaller font for side-by-side display */
+    font-size: 1.5rem;
     margin: 0;
 }
 
