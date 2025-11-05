@@ -413,7 +413,7 @@ footer {
     border-radius: 5px;
 }
 
-#device-selector option {
+#device-selector>option {
     background: rgb(44, 36, 96);
     color: whitesmoke;
     font-size: 12px;
