@@ -144,36 +144,36 @@ def get_voltage_info():
                         voltages["core"] = current_volt
                 except Exception:
                     pass
-    else:
-        try:
-            power_info_path = "/sys/class/power_supply/max17042/current_now"
-            if os.path.exists(power_info_path):
-                with open(power_info_path, 'r', encoding="UTF-8") as f:
-                    amp_str = f.read().strip()
-                    voltages["amperage"] = float(amp_str) / 1000000.0
-        except Exception:
-            pass
-
-        try:
-            for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
+            else:
                 try:
-                    out = subprocess.run(
-                        ['vcgencmd', 'measure_volts', name],
-                        capture_output=True,
-                        text=True,
-                        check=True
-                    )
-                    v = out.stdout.strip().split('=')[-1]
-                    if v.endswith('V'):
-                        v = v[:-1]
-                    try:
-                        voltages[name] = float(v)
-                    except Exception:
-                        voltages[name] = None
+                    power_info_path = "/sys/class/power_supply/max17042/current_now"
+                    if os.path.exists(power_info_path):
+                        with open(power_info_path, 'r', encoding="UTF-8") as f:
+                            amp_str = f.read().strip()
+                            voltages["amperage"] = float(amp_str) / 1000000.0
                 except Exception:
-                    voltages[name] = None
-        except Exception:
-            voltages = {}
+                    pass
+
+                try:
+                    for name in ('core', 'sdram_c', 'sdram_i', 'sdram_p'):
+                        try:
+                            out = subprocess.run(
+                                ['vcgencmd', 'measure_volts', name],
+                                capture_output=True,
+                                text=True,
+                                check=True
+                            )
+                            v = out.stdout.strip().split('=')[-1]
+                            if v.endswith('V'):
+                                v = v[:-1]
+                            try:
+                                voltages[name] = float(v)
+                            except Exception:
+                                voltages[name] = None
+                        except Exception:
+                            voltages[name] = None
+                except Exception:
+                    voltages = {}
     return voltages
 
 
