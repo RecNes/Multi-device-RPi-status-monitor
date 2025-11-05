@@ -413,6 +413,13 @@ footer {
     border-radius: 5px;
 }
 
+#device-selector:hover {
+    color: white;
+    border: #859eb1;
+    border-style: dotted;
+    border-radius: 5px;
+}
+
 #device-selector>option {
     background: rgb(44, 36, 96);
     color: whitesmoke;
