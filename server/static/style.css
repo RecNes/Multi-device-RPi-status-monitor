@@ -419,6 +419,4 @@ footer {
     font-size: 12px;
     z-index: 9999;
     position: relative;
-    background: linear-gradient(to right, rgb(44, 62, 80), rgb(74, 100, 145));
-    transition: background 0.5s ease;
 }
