@@ -1,5 +1,5 @@
 
-# <img src="https://raw.githubusercontent.com/RecNes/Multi-device-RPi-status-monitor/refs/heads/main/logo-transparent.png" alt="Multi-Device Raspberry Pi Status Monitor" width="128"> Multi-Device Raspberry Pi Status Monitor
+# <img src="https://raw.githubusercontent.com/RecNes/Multi-device-RPi-status-monitor/refs/heads/main/assets/logo-transparent.png" alt="Multi-Device Raspberry Pi Status Monitor" width="128"> Multi-Device Raspberry Pi Status Monitor
 
 [![CodeQL](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql)
 [![pages-build-deployment](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment)
