@@ -42,7 +42,7 @@ The system is split into two main components:
 
 First, clone the repository on both your server machine and all client machines.
 
-    git clone https://github.com/RecNes/stand-alone-RPi-status-monitoring-page.git
+    git clone https://github.com/RecNes/Multi-device-RPi-status-monitor.git
 
 ---
 
@@ -51,7 +51,7 @@ First, clone the repository on both your server machine and all client machines.
 The server can be installed on any Debian-based Linux machine (including a Raspberry Pi).
 
     # Navigate to the server directory
-    cd stand-alone-RPi-status-monitoring-page/server/
+    cd Multi-device-RPi-status-monitor/server/
 
     # Make the installation script executable
     chmod +x install_server.sh
@@ -71,7 +71,7 @@ This script will:
 Install the client on each Raspberry Pi or device you want to monitor.
 
     # Navigate to the client directory
-    cd stand-alone-RPi-status-monitoring-page/client/
+    cd Multi-device-RPi-status-monitor/client/
 
     # Make the installation script executable
     chmod +x install_client.sh
