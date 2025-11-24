@@ -11,13 +11,6 @@ Version: 4.0.0
 
 This project provides a centralized web dashboard for monitoring the system metrics of multiple Raspberry Pi (or other Debian-based) devices. It uses a client-server architecture where lightweight clients send data from each monitored device to a central server, which then displays the information in a real-time web interface.
 
-# Screenshot
-*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics, etc.)*
-<img src="assets\screen_shot1.png" alt="Main Display" />
-<img src="assets\screen_shot2.png" alt="Graphic Modal Display" />
-<img src="assets\screen_shot3.png" alt="Graphic Filter Display" />
-<img src="assets\screen_shot4.png" alt="Client Selection Display" />
-
 ## Features
 
 *   **Centralized Multi-Device Monitoring:** View the status of all your devices from a single web page.
@@ -121,3 +114,11 @@ You can manage the server and client applications using `systemctl`.
 | **Restart**     | `sudo systemctl restart rpi-monitor-client.service`|
 | **Stop**        | `sudo systemctl stop rpi-monitor-client.service`  |
 | **View Logs**   | `sudo journalctl -u rpi-monitor-client.service -f`|
+
+# Screenshots
+*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics, etc.)*
+<img src="assets\screen_shot1.png" alt="Main Display" />
+<img src="assets\screen_shot2.png" alt="Graphic Modal Display" />
+<img src="assets\screen_shot3.png" alt="Graphic Filter Display" />
+<img src="assets\screen_shot4.png" alt="Client Selection Display" />
+
