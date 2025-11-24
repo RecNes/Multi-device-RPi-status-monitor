@@ -1,5 +1,5 @@
 
-# <img src="https://raw.githubusercontent.com/RecNes/Multi-device-RPi-status-monitor/refs/heads/main/logo-transparent.png" alt="Multi-Device Raspberry Pi Status Monitor" width="128"> Multi-Device Raspberry Pi Status Monitor
+# <img src="https://raw.githubusercontent.com/RecNes/Multi-device-RPi-status-monitor/refs/heads/main/assets/logo-transparent.png" alt="Multi-Device Raspberry Pi Status Monitor" width="128"> Multi-Device Raspberry Pi Status Monitor
 
 [![CodeQL](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/github-code-scanning/codeql)
 [![pages-build-deployment](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/RecNes/Multi-device-RPi-status-monitor/actions/workflows/pages/pages-build-deployment)
@@ -12,8 +12,11 @@ Version: 4.0.0
 This project provides a centralized web dashboard for monitoring the system metrics of multiple Raspberry Pi (or other Debian-based) devices. It uses a client-server architecture where lightweight clients send data from each monitored device to a central server, which then displays the information in a real-time web interface.
 
 # Screenshot
-*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics.)*
-<img src="screen_shot.png" alt="Project Logo" />
+*(The new interface allows selecting between multiple devices and viewing detailed, collapsible metrics, etc.)*
+<img src="assets\screen_shot1.png" alt="Main Display" />
+<img src="assets\screen_shot2.png" alt="Graphic Modal Display" />
+<img src="assets\screen_shot3.png" alt="Graphic Filter Display" />
+<img src="assets\screen_shot4.png" alt="Client Selection Display" />
 
 ## Features
 
